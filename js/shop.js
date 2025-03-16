@@ -811,3 +811,178 @@ function showInventoryForDisplay(displayId) {
     modal.appendChild(modalContent);
     document.body.appendChild(modal);
 }
+// Direct fix for shop displays - Add this to the end of your shop.js file
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait for page to fully load
+    setTimeout(function() {
+        // Fix click handlers for empty shop displays
+        fixEmptyDisplays();
+        
+        // Add click event listener to handle future updates
+        document.addEventListener('click', function(e) {
+            // Check if we clicked on a shop display or its child
+            let target = e.target;
+            while (target && !target.classList.contains('shop-display')) {
+                target = target.parentElement;
+            }
+            
+            // If we found a shop display
+            if (target && target.classList.contains('shop-display') && !target.classList.contains('filled')) {
+                e.stopPropagation();
+                handleEmptyDisplayClick(target.id);
+            }
+        }, true);
+    }, 1000);
+});
+
+// Function to fix empty display spots
+function fixEmptyDisplays() {
+    // Find all empty display spots
+    document.querySelectorAll('.shop-display:not(.filled)').forEach(display => {
+        // Add visual indicator that it's clickable
+        display.style.cursor = 'pointer';
+        
+        // Add click event directly
+        display.onclick = function() {
+            handleEmptyDisplayClick(this.id);
+        };
+    });
+}
+
+// Handle click on empty display
+function handleEmptyDisplayClick(displayId) {
+    console.log("Clicked on empty display:", displayId);
+    
+    // Check if shop is open
+    if (window.shopState && window.shopState.dayInProgress) {
+        if (typeof showNotification === 'function') {
+            showNotification('Cannot change displays while shop is open!');
+        } else {
+            alert('Cannot change displays while shop is open!');
+        }
+        return;
+    }
+    
+    // Simple inventory selection
+    openInventorySelector(displayId);
+}
+
+// Open a simple inventory selector
+function openInventorySelector(displayId) {
+    // Create a simple modal
+    const modal = document.createElement('div');
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
+    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    modal.style.display = 'flex';
+    modal.style.justifyContent = 'center';
+    modal.style.alignItems = 'center';
+    modal.style.zIndex = '1000';
+    
+    // Modal content
+    const content = document.createElement('div');
+    content.style.backgroundColor = '#fff5f7';
+    content.style.borderRadius = '12px';
+    content.style.padding = '20px';
+    content.style.maxWidth = '90%';
+    content.style.maxHeight = '90%';
+    content.style.overflow = 'auto';
+    
+    // Title
+    const title = document.createElement('h2');
+    title.textContent = 'Select a Product to Display';
+    title.style.marginBottom = '15px';
+    
+    content.appendChild(title);
+    
+    // Get available products
+    const availableProducts = window.gameState.inventory.filter(p => !p.displayed);
+    
+    if (availableProducts.length === 0) {
+        const noProducts = document.createElement('p');
+        noProducts.textContent = 'No products available. Create some in the Art Studio!';
+        content.appendChild(noProducts);
+    } else {
+        // Create a grid
+        const grid = document.createElement('div');
+        grid.style.display = 'grid';
+        grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(150px, 1fr))';
+        grid.style.gap = '15px';
+        
+        // Add products
+        availableProducts.forEach(product => {
+            const productEl = document.createElement('div');
+            productEl.style.border = '1px solid #ffb8c6';
+            productEl.style.borderRadius = '8px';
+            productEl.style.padding = '10px';
+            productEl.style.cursor = 'pointer';
+            productEl.style.backgroundColor = 'white';
+            
+            // Product image
+            const img = document.createElement('img');
+            img.src = product.imageUrl;
+            img.alt = product.name;
+            img.style.width = '100%';
+            img.style.height = 'auto';
+            img.style.marginBottom = '10px';
+            
+            // Product name
+            const name = document.createElement('p');
+            name.textContent = product.name;
+            name.style.margin = '5px 0';
+            name.style.fontWeight = 'bold';
+            
+            // Product price
+            const price = document.createElement('p');
+            price.textContent = `${product.price} coins`;
+            
+            productEl.appendChild(img);
+            productEl.appendChild(name);
+            productEl.appendChild(price);
+            
+            // Click handler
+            productEl.onclick = function() {
+                // Display the product
+                window.displayProduct(product.id, displayId);
+                
+                // Close modal
+                document.body.removeChild(modal);
+                
+                // Refresh displays
+                if (typeof window.renderShopDisplays === 'function') {
+                    window.renderShopDisplays();
+                }
+                
+                // Show notification
+                if (typeof window.showNotification === 'function') {
+                    window.showNotification('Product added to display!');
+                }
+            };
+            
+            grid.appendChild(productEl);
+        });
+        
+        content.appendChild(grid);
+    }
+    
+    // Add close button
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = 'Cancel';
+    closeBtn.style.marginTop = '20px';
+    closeBtn.style.padding = '8px 16px';
+    closeBtn.style.backgroundColor = '#ffb8c6';
+    closeBtn.style.border = 'none';
+    closeBtn.style.borderRadius = '8px';
+    closeBtn.style.cursor = 'pointer';
+    
+    closeBtn.onclick = function() {
+        document.body.removeChild(modal);
+    };
+    
+    content.appendChild(closeBtn);
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+}
