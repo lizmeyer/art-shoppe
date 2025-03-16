@@ -11,6 +11,8 @@ function initializeInventory() {
 // Render the inventory grid
 function renderInventory() {
     const inventoryGrid = document.getElementById('inventoryGrid');
+    if (!inventoryGrid) return;
+    
     inventoryGrid.innerHTML = '';
     
     if (gameState.inventory.length === 0) {
@@ -37,17 +39,12 @@ function renderInventory() {
         item.className = 'inventory-item';
         item.dataset.id = product.id;
         
-        // Create product preview
+        // Create product preview container
         const previewContainer = document.createElement('div');
         previewContainer.className = 'inventory-item-image';
+        previewContainer.style.position = 'relative';
         
-        // Product container (for positioning art correctly)
-        const productContainer = document.createElement('div');
-        productContainer.style.position = 'relative';
-        productContainer.style.width = '100%';
-        productContainer.style.height = '100%';
-        
-        // Base product image
+        // Product base image
         const baseImg = document.createElement('img');
         baseImg.src = product.imageUrl;
         baseImg.alt = product.name;
@@ -55,20 +52,22 @@ function renderInventory() {
         baseImg.style.height = '100%';
         baseImg.style.objectFit = 'contain';
         
+        // Get positioning
+        const artPosition = getArtPosition(product.templateId);
+        
         // Art overlay
         const artImg = document.createElement('img');
         artImg.src = product.artUrl;
+        artImg.alt = "Custom Art";
         artImg.style.position = 'absolute';
-        artImg.style.top = '0';
-        artImg.style.left = '0';
-        artImg.style.width = '100%';
-        artImg.style.height = '100%';
-        artImg.style.objectFit = 'contain';
+        artImg.style.top = artPosition.top;
+        artImg.style.left = artPosition.left;
+        artImg.style.width = artPosition.width;
+        artImg.style.height = artPosition.height;
         artImg.style.mixBlendMode = 'multiply';
         
-        productContainer.appendChild(baseImg);
-        productContainer.appendChild(artImg);
-        previewContainer.appendChild(productContainer);
+        previewContainer.appendChild(baseImg);
+        previewContainer.appendChild(artImg);
         
         // Product details
         const details = document.createElement('div');
@@ -84,6 +83,9 @@ function renderInventory() {
         const coinIcon = document.createElement('img');
         coinIcon.src = 'images/ui/coin.png';
         coinIcon.alt = 'coins';
+        coinIcon.onerror = function() {
+            this.outerHTML = '🪙';
+        };
         
         const priceValue = document.createElement('span');
         priceValue.textContent = product.price;
@@ -98,7 +100,7 @@ function renderInventory() {
         const actions = document.createElement('div');
         actions.className = 'inventory-item-actions';
         
-        // Display/Remove from Display button
+        // Display/Remove button
         const displayBtn = document.createElement('button');
         
         if (product.displayed) {
