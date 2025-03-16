@@ -237,14 +237,14 @@
     }
   });
 </script>
+
     <script>
   // Helper function to add event listeners to dynamic dialog buttons
   function setupProductDialogButtons() {
     // Add event listener for dynamically created dialog buttons
     document.addEventListener('click', function(event) {
       // Check for Add to Inventory button
-      if (event.target.textContent === 'Add to Inventory' || 
-          event.target.className.includes('inventory-button')) {
+      if (event.target.textContent === 'Add to Inventory') {
         console.log('Add to Inventory clicked');
         
         // Find the product ID from the dialog
@@ -279,8 +279,7 @@
       }
       
       // Check for Add to Shop button
-      if (event.target.textContent === 'Add to Shop' || 
-          event.target.className.includes('shop-button')) {
+      if (event.target.textContent === 'Add to Shop') {
         console.log('Add to Shop clicked');
         
         // Find the product ID from the dialog
@@ -403,21 +402,25 @@
   document.addEventListener('DOMContentLoaded', function() {
     setupProductDialogButtons();
     
-    // Also hook into existing 'Create Product' button
-    const createBtn = document.querySelector('button.create-product-btn, button:contains("Create Product")');
-    if (createBtn) {
-      createBtn.addEventListener('click', function() {
+    // Find Create Product button using Array.from and filter
+    const createButtons = Array.from(document.querySelectorAll('button'))
+      .filter(button => button.textContent.trim() === 'Create Product');
+    
+    if (createButtons.length > 0) {
+      createButtons[0].addEventListener('click', function() {
         console.log('Create Product button clicked');
       });
     }
   });
 
-  // Handle click events on any newly added buttons
+  // Handle clicks on the Create Product button
   document.addEventListener('click', function(e) {
-    if (e.target.textContent === 'Create Product') {
+    if (e.target.textContent.trim() === 'Create Product') {
       console.log('Create Product clicked via delegation');
     }
   });
 </script>
+
+    
 </body>
 </html>
