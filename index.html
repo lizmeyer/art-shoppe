@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description" content="Cozy Artist Shop - Create art and sell products with your designs!">
+    <title>Cozy Artist Shop</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- CSS files -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/painter.css">
+    
+    <!-- Apple touch icon for iOS -->
+    <link rel="apple-touch-icon" href="images/ui/app-icon.png">
+    
+    <!-- Preload critical assets -->
+    <link rel="preload" href="images/shop/background.png" as="image">
+    <link rel="preload" href="images/ui/paint-brush.png" as="image">
+</head>
+<body data-theme="pastel">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <img src="images/ui/paint-brush.png" alt="Paint Brush" class="loading-image">
+            <h2>Loading Cozy Artist Shop...</h2>
+            <p>Setting up your shop!</p>
+            <div class="loading-bar-container">
+                <div class="loading-bar" id="loadingBar"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Game Container -->
+    <div class="game-container">
+        <!-- Top Bar with Stats -->
+        <div class="top-bar">
+            <div class="coins">
+                <img src="images/ui/coin.png" alt="Coins">
+                <span id="coinCount">100</span>
+            </div>
+            <div class="day-counter">Day <span id="dayCount">1</span></div>
+            <div class="menu-button" id="menuButton">☰</div>
+        </div>
+        
+        <!-- Main Game Area -->
+        <div class="game-area">
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button class="tab-button active" data-tab="shop">Shop</button>
+                <button class="tab-button" data-tab="studio">Art Studio</button>
+                <button class="tab-button" data-tab="inventory">Inventory</button>
+            </div>
+            
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <!-- Shop Tab -->
+                <div class="tab-pane active" id="shopTab">
+                    <div class="shop-scene">
+                        <!-- Shop displays will go here -->
+                        <div class="shop-displays" id="shopDisplays"></div>
+                        
+                        <!-- Customer area -->
+                        <div class="customer-area" id="customerArea"></div>
+                    </div>
+                </div>
+                
+                <!-- Studio Tab -->
+                <div class="tab-pane" id="studioTab">
+                    <div class="studio-container">
+                        <!-- Canvas Area -->
+                        <div class="canvas-container">
+                            <canvas id="paintCanvas" width="400" height="400"></canvas>
+                        </div>
+                        
+                        <!-- Tool Palette -->
+                        <div class="tool-palette">
+                            <div class="color-picker">
+                                <!-- Color swatches will be added dynamically -->
+                            </div>
+                            <div class="brush-sizes">
+                                <button class="brush-size" data-size="2"></button>
+                                <button class="brush-size" data-size="5"></button>
+                                <button class="brush-size" data-size="10"></button>
+                            </div>
+                            <div class="tools">
+                                <button class="tool-button" id="brushTool">Brush</button>
+                                <button class="tool-button" id="eraserTool">Eraser</button>
+                                <button class="tool-button" id="fillTool">Fill</button>
+                                <button class="tool-button" id="clearTool">Clear</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Product Preview -->
+                        <div class="product-preview">
+                            <h3>Apply to Product</h3>
+                            <div class="product-selector">
+                                <!-- Product options will be added dynamically -->
+                            </div>
+                            <div class="preview-display">
+                                <div class="product-display" id="productPreview"></div>
+                            </div>
+                            <button class="save-button" id="saveProductButton">Create Product</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Inventory Tab -->
+                <div class="tab-pane" id="inventoryTab">
+                    <h2>Your Inventory</h2>
+                    <div class="inventory-grid" id="inventoryGrid">
+                        <!-- Inventory items will be added dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <div class="modal" id="menuModal">
+        <div class="modal-content">
+            <h2>Menu</h2>
+            <button id="saveGameButton">Save Game</button>
+            <button id="changeThemeButton">Change Theme</button>
+            <button id="helpButton">Help</button>
+            <button id="closeMenuButton">Close</button>
+        </div>
+    </div>
+    
+    <div class="modal" id="productCreatedModal">
+        <div class="modal-content">
+            <h2>Product Created!</h2>
+            <div class="created-product" id="createdProductDisplay"></div>
+            <p>Your creation has been added to your inventory.</p>
+            <button id="closeProductModal">Ok</button>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification">
+        <p id="notificationText"></p>
+    </div>
+    
+    <!-- JavaScript Files -->
+    <script src="js/gameState.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/painter.js"></script>
+    <script src="js/shop.js"></script>
+    <script src="js/inventory.js"></script>
+    <script src="js/customers.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
