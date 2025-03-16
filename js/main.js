@@ -49,7 +49,8 @@ function initializeGame() {
     
     try {
         // Initialize game state
-        initGame();
+        gameState.init();
+    UI.init();
         
         // Apply saved theme
         if (typeof setTheme === 'function') {
