@@ -217,10 +217,33 @@ function createProductOptions() {
         option.className = 'product-option';
         option.dataset.product = product.id;
         
-        // Create image element
+        // Create image element with fallback
         const img = document.createElement('img');
-        img.src = product.image;
         img.alt = product.name;
+        img.style.width = '60px';
+        img.style.height = '60px';
+        img.style.objectFit = 'contain';
+        
+        // Handle image loading with fallback
+        img.onerror = function() {
+            // If image fails to load, create a fallback
+            this.style.display = 'none';
+            
+            // Basic fallback for product display
+            const fallback = document.createElement('div');
+            fallback.style.width = '60px';
+            fallback.style.height = '60px';
+            fallback.style.backgroundColor = 'white';
+            fallback.style.border = '2px solid var(--text-color)';
+            fallback.style.borderRadius = '4px';
+            fallback.style.display = 'flex';
+            fallback.style.justifyContent = 'center';
+            fallback.style.alignItems = 'center';
+            fallback.textContent = product.name;
+            option.appendChild(fallback);
+        };
+        
+        img.src = product.image;
         
         // Create name element
         const name = document.createElement('div');
@@ -261,15 +284,30 @@ function updateProductPreview() {
     const previewEl = document.getElementById('productPreview');
     previewEl.innerHTML = '';
     
+    // Create container for proper positioning
+    const container = document.createElement('div');
+    container.style.position = 'relative';
+    container.style.width = '100%';
+    container.style.height = '100%';
+    
     // Create product base image
     const baseImg = document.createElement('img');
     baseImg.className = 'product-base';
     baseImg.src = painter.selectedProduct.image;
+    baseImg.style.width = '100%';
+    baseImg.style.height = '100%';
+    baseImg.style.objectFit = 'contain';
     
     // Create art overlay
     const artImg = document.createElement('img');
     artImg.className = 'product-art';
     artImg.src = painter.artDataUrl;
+    artImg.style.position = 'absolute';
+    artImg.style.top = '0';
+    artImg.style.left = '0';
+    artImg.style.width = '100%';
+    artImg.style.height = '100%';
+    artImg.style.mixBlendMode = 'multiply';
     
     // Apply positioning from template
     const pos = painter.selectedProduct.artPosition;
@@ -281,8 +319,9 @@ function updateProductPreview() {
         artImg.style.transform = `rotate(${pos.rotation}deg)`;
     }
     
-    previewEl.appendChild(baseImg);
-    previewEl.appendChild(artImg);
+    container.appendChild(baseImg);
+    container.appendChild(artImg);
+    previewEl.appendChild(container);
 }
 
 // Set the active drawing tool
@@ -316,6 +355,9 @@ function createProduct() {
         return;
     }
     
+    // Ensure we have the latest canvas data
+    updateArtDataUrl();
+    
     // Create a product object
     const product = {
         templateId: painter.selectedProduct.id,
@@ -326,57 +368,91 @@ function createProduct() {
         created: new Date().toISOString()
     };
     
+    console.log("Creating product with art:", painter.artDataUrl);
+    
     // Add to inventory
     const newProduct = addToInventory(product);
     
     // Show created product
     showCreatedProduct(newProduct);
     
-    // Clear canvas for next creation
-    resetCanvas();
-    
-    // Send analytics event (if this was real)
-    // trackEvent('product_created', { type: painter.selectedProduct.id });
+    // No need to clear canvas immediately, let the user see what they created
+    // Only clear after they confirm
 }
 
 // Show the created product in a modal
 function showCreatedProduct(product) {
+    console.log("Showing created product:", product);
+    
     const displayEl = document.getElementById('createdProductDisplay');
     displayEl.innerHTML = '';
     
-    // Create product preview similar to updateProductPreview
+    // Create a container with proper positioning
+    const container = document.createElement('div');
+    container.style.position = 'relative';
+    container.style.width = '200px';
+    container.style.height = '200px';
+    container.style.margin = '0 auto';
+    container.style.backgroundColor = 'white';
+    container.style.borderRadius = 'var(--border-radius)';
+    
+    // Get the template
     const template = getProductTemplate(product.templateId);
+    console.log("Template:", template);
     
     // Create product base image
     const baseImg = document.createElement('img');
-    baseImg.className = 'product-base';
-    baseImg.src = template.image;
+    baseImg.style.width = '100%';
+    baseImg.style.height = '100%';
+    baseImg.style.objectFit = 'contain';
+    baseImg.style.position = 'absolute';
+    baseImg.style.top = '0';
+    baseImg.style.left = '0';
+    baseImg.src = product.imageUrl;
+    baseImg.alt = product.name;
     
     // Create art overlay
     const artImg = document.createElement('img');
-    artImg.className = 'product-art';
+    artImg.style.position = 'absolute';
+    artImg.style.mixBlendMode = 'multiply';
     artImg.src = product.artUrl;
+    artImg.alt = "Your Art";
     
     // Apply positioning from template
     const pos = template.artPosition;
-    artImg.style.top = `${pos.y}px`;
-    artImg.style.left = `${pos.x}px`;
-    artImg.style.width = `${pos.width}px`;
-    artImg.style.height = `${pos.height}px`;
+    
+    // Apply scaling appropriate for the modal size
+    const scaleFactor = 0.5; // Adjust based on your modal size
+    artImg.style.top = `${pos.y * scaleFactor}px`;
+    artImg.style.left = `${pos.x * scaleFactor}px`;
+    artImg.style.width = `${pos.width * scaleFactor}px`;
+    artImg.style.height = `${pos.height * scaleFactor}px`;
+    
     if (pos.rotation) {
         artImg.style.transform = `rotate(${pos.rotation}deg)`;
     }
     
-    displayEl.appendChild(baseImg);
-    displayEl.appendChild(artImg);
+    // Add a separate preview of just the art
+    const artPreview = document.createElement('div');
+    artPreview.style.marginTop = '10px';
+    artPreview.innerHTML = `
+        <p style="font-size: 0.9rem; margin: 5px 0;">Your Design:</p>
+        <img src="${product.artUrl}" style="max-width: 80px; max-height: 80px; border: 1px solid #ddd; border-radius: 4px;">
+    `;
+    
+    container.appendChild(baseImg);
+    container.appendChild(artImg);
+    displayEl.appendChild(container);
+    displayEl.appendChild(artPreview);
     
     // Show the modal
     const modal = document.getElementById('productCreatedModal');
     modal.classList.add('active');
     
-    // Close button
+    // Close button should reset the canvas
     document.getElementById('closeProductModal').addEventListener('click', () => {
         modal.classList.remove('active');
+        resetCanvas(); // Clear canvas after they confirm
     });
 }
 
@@ -477,3 +553,26 @@ function hexToRgb(hex) {
     
     return { r, g, b };
 }
+
+// Debug function that can be called from console
+window.debugArtPosition = function() {
+    console.log("Current art data:", painter.artDataUrl);
+    console.log("Selected product:", painter.selectedProduct);
+    
+    // Show current positions
+    const pos = painter.selectedProduct.artPosition;
+    console.log("Art position:", pos);
+    
+    // Create test overlay
+    const testOverlay = document.createElement('div');
+    testOverlay.style.position = 'absolute';
+    testOverlay.style.border = '2px solid red';
+    testOverlay.style.top = `${pos.y}px`;
+    testOverlay.style.left = `${pos.x}px`;
+    testOverlay.style.width = `${pos.width}px`;
+    testOverlay.style.height = `${pos.height}px`;
+    
+    const previewEl = document.getElementById('productPreview');
+    previewEl.appendChild(testOverlay);
+    
+    return "Debug overlay
