@@ -822,3 +822,20 @@ function getArtPosition(productId) {
         case 'shirt':
             position = {
                 top: '25%',
+                left: '35%',
+                width: '30%',
+                height: '30%'
+            };
+            break;
+        case 'poster':
+            position = {
+                top: '15%',
+                left: '15%',
+                width: '70%',
+                height: '70%'
+            };
+            break;
+    }
+    
+    return position;
+}
