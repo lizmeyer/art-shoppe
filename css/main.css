@@ -1,68 +1,66 @@
-/* Main CSS for Cozy Artist Shop */
+/* 
+ * Main Styles for Cozy Artist Shop
+ * Contains root variables, base styles, and layout
+ */
 
 :root {
-    /* Pastel Theme - Default */
+    /* Theme Colors - Default Pastel */
     --bg-primary: #ffd6e0;
     --bg-secondary: #ffecf0;
-    --accent-color: #ffb8c6;
-    --text-color: #664e56;
-    --button-color: #ffcfd9;
-    --button-hover: #ffb8c6;
-    --border-color: #e6b8c1;
-    --success-color: #c5e8d1;
-    --shadow-color: rgba(102, 78, 86, 0.1);
+    --accent-primary: #ffb8c9;
+    --accent-secondary: #fff0f3;
+    --text-primary: #5e4c5a;
+    --text-secondary: #8a7086;
+    --button-primary: #ffcfd8;
+    --button-secondary: #ffa5be;
+    --success: #a8e6cf;
+    --warning: #fdffb6;
+    --danger: #ffb7b2;
+    --shadow: rgba(0, 0, 0, 0.1);
     
-    /* UI Properties */
-    --border-radius: 12px;
-    --transition-speed: 0.3s;
-    
-    /* Game Elements */
-    --shop-floor: #fff5f7;
-    --shop-wall: #ffcfd9;
-
-      /* Animation Variables */
+    /* Animation Variables */
     --transition-fast: 0.2s;
     --transition-normal: 0.3s;
+    --transition-slow: 0.5s;
     
     /* Size Variables */
     --header-height: 60px;
     --nav-height: 60px;
+    --action-bar-height: 60px;
 }
 
-/* Theme Variations */
+/* Mint Theme */
 [data-theme="mint"] {
     --bg-primary: #c5e8d1;
     --bg-secondary: #e8f5ed;
-    --accent-color: #a3d9b3;
-    --text-color: #4e664f;
-    --button-color: #d1eadb;
-    --button-hover: #a3d9b3;
-    --border-color: #b3d0bd;
-    --success-color: #ffeac7;
-    --shadow-color: rgba(78, 102, 79, 0.1);
-    --shop-floor: #f5fff8;
-    --shop-wall: #d1eadb;
+    --accent-primary: #8dd5aa;
+    --accent-secondary: #d6f1e0;
+    --text-primary: #3c6e50;
+    --text-secondary: #5c8a70;
+    --button-primary: #b0e0c2;
+    --button-secondary: #7ac799;
 }
 
+/* Lavender Theme */
 [data-theme="lavender"] {
     --bg-primary: #e0d6ff;
     --bg-secondary: #f0ecff;
-    --accent-color: #c5b8ff;
-    --text-color: #57526e;
-    --button-color: #e4deff;
-    --button-hover: #c5b8ff;
-    --border-color: #ccc4e6;
-    --success-color: #d6ffe0;
-    --shadow-color: rgba(87, 82, 110, 0.1);
-    --shop-floor: #f7f5ff;
-    --shop-wall: #e4deff;
+    --accent-primary: #c3b5e0;
+    --accent-secondary: #e2d9f8;
+    --text-primary: #5b4d79;
+    --text-secondary: #7a6f94;
+    --button-primary: #d6cef3;
+    --button-secondary: #b5a6db;
 }
 
-/* Base Styles */
+/* Reset & Base Styles */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    user-select: none;
 }
 
 html, body {
@@ -70,335 +68,388 @@ html, body {
     width: 100%;
     overflow: hidden;
     position: fixed;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
 }
 
 body {
     font-family: 'Quicksand', sans-serif;
     background-color: var(--bg-primary);
-    color: var(--text-color);
-    transition: background-color var(--transition-speed) ease;
+    color: var(--text-primary);
+    font-size: 16px;
+    line-height: 1.5;
+    transition: background-color var(--transition-normal) ease;
 }
 
-h1, h2, h3 {
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
     margin-bottom: 0.5rem;
     font-weight: 600;
+    color: var(--text-primary);
 }
 
-button {
-    font-family: 'Quicksand', sans-serif;
-    background-color: var(--button-color);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all var(--transition-speed) ease;
+h1 { font-size: 2rem; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1.1rem; }
+
+p {
+    margin-bottom: 1rem;
 }
 
-button:hover {
-    background-color: var(--button-hover);
-    transform: translateY(-2px);
+/* Full-screen Views */
+.screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    background-color: var(--bg-primary);
 }
 
-button:active {
-    transform: translateY(0);
+.loading-screen {
+    text-align: center;
 }
 
-button.active {
-    background-color: var(--accent-color);
-    color: white;
+.error-screen {
+    background-color: #ffeaec;
+}
+
+.error-content, .loading-content {
+    background-color: var(--bg-secondary);
+    border-radius: 15px;
+    padding: 2rem;
+    max-width: 90%;
+    width: 400px;
+    box-shadow: 0 5px 15px var(--shadow);
+}
+
+.error-message {
+    background-color: #fff;
+    border: 1px solid var(--danger);
+    padding: 1rem;
+    border-radius: 5px;
+    margin: 1rem 0;
+    font-family: monospace;
+    overflow-x: auto;
+}
+
+/* Loading Elements */
+.loading-icon {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 1rem;
+}
+
+.progress-container {
+    width: 100%;
+    height: 10px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 5px;
+    overflow: hidden;
+    margin: 1.5rem 0 0.5rem;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background-color: var(--button-secondary);
+    transition: width 0.3s ease;
 }
 
 /* Game Container */
 .game-container {
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
-/* Top Bar */
-.top-bar {
+/* Header */
+.game-header {
+    height: var(--header-height);
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem 1rem;
+    padding: 0 1rem;
     background-color: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-color);
-    height: 3rem;
+    box-shadow: 0 2px 5px var(--shadow);
+    z-index: 10;
 }
 
-.coins {
+.currency-display {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 1.2rem;
 }
 
-.coins img {
-    width: 1.5rem;
-    height: 1.5rem;
-}
-
-.coin-icon {
+.currency-icon {
     width: 24px;
     height: 24px;
-    vertical-align: middle;
+    margin-right: 0.5rem;
 }
 
-/* Product fallbacks */
-.product-fallback {
-    width: 100%;
-    height: 100%;
-    border: 2px solid var(--text-color);
-    border-radius: var(--border-radius);
-    background-color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
+.day-display {
+    font-weight: 600;
+    font-size: 1.2rem;
 }
 
 .menu-button {
+    background: none;
+    border: none;
     font-size: 1.5rem;
+    color: var(--text-primary);
     cursor: pointer;
 }
 
-/* Game Area */
-.game-area {
+/* Main Content */
+.game-content {
     flex: 1;
+    position: relative;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
 }
 
-/* Tab Navigation */
-.tab-navigation {
-    display: flex;
-    background-color: var(--bg-secondary);
-    padding: 0.5rem;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.tab-button {
-    border-radius: var(--border-radius);
-    margin-right: 0.5rem;
-    border: none;
-    background-color: transparent;
-}
-
-.tab-button.active {
-    background-color: var(--accent-color);
-    color: white;
-}
-
-/* Tab Content */
-.tab-content {
-    flex: 1;
-    overflow: hidden;
-    position: relative;
-}
-
-.tab-pane {
+.game-view {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    display: none;
+    padding: 1rem;
     overflow-y: auto;
+    background-color: var(--bg-primary);
+    transition: transform var(--transition-normal) ease,
+                opacity var(--transition-normal) ease;
+    z-index: 1;
+    -webkit-overflow-scrolling: touch;
 }
 
-.tab-pane.active {
-    display: block;
+.game-view.hidden {
+    transform: translateX(100%);
+    opacity: 0;
+    z-index: 0;
 }
 
-/* Shop Scene */
-.shop-scene {
-    position: relative;
+.view-title {
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.hint-text {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+/* Shop View */
+.shop-background {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    background-color: var(--shop-floor);
-    border-top: 10px solid var(--shop-wall);
+    background-image: url('../assets/images/ui/shop-background.png');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.2;
+    z-index: -1;
+}
+
+.shop-displays-container {
+    margin-bottom: 2rem;
 }
 
 .shop-displays {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
-    padding: 1rem;
-}
-
-.customer-area {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 30%;
-    pointer-events: none;
-}
-
-/* Loading Overlay */
-.loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: var(--bg-primary);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.loading-content {
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.loading-image {
-    width: 100px;
-    height: 100px;
-    margin-bottom: 1rem;
-    animation: float 3s infinite ease-in-out;
-}
-
-.loading-bar-container {
-    width: 200px;
-    height: 15px;
-    background-color: var(--bg-secondary);
-    border-radius: 10px;
-    overflow: hidden;
     margin-top: 1rem;
 }
 
-.loading-bar {
-    height: 100%;
-    width: 0%;
-    background-color: var(--accent-color);
-    border-radius: 10px;
-    transition: width 0.5s ease;
+.customer-section {
+    margin-top: auto;
 }
 
-/* Modals */
-.modal {
-    position: fixed;
+.customer-area {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    height: 150px;
+    margin-top: 1rem;
+}
+
+/* Studio View */
+.product-selection {
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.canvas-container {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    margin: 0 auto 1.5rem;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px var(--shadow);
+}
+
+.product-preview {
+    position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#artCanvas {
+    position: relative;
+    z-index: 1;
+    cursor: crosshair;
+}
+
+.art-tools {
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+.tool-section {
+    margin-bottom: 1.5rem;
+}
+
+.color-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 0.5rem;
+}
+
+.canvas-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+/* Inventory View */
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+/* Settings View */
+.settings-group {
+    background-color: var(--bg-secondary);
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+}
+
+.theme-options {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.settings-row label {
+    flex: 1;
+}
+
+.settings-row input {
+    flex: 2;
+}
+
+.settings-group button {
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Action Bar */
+.action-bar {
+    height: var(--action-bar-height);
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-}
-
-.modal.active {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.modal-content {
+    padding: 0 1rem;
     background-color: var(--bg-secondary);
-    padding: 2rem;
-    border-radius: var(--border-radius);
-    max-width: 90%;
-    max-height: 90%;
-    overflow-y: auto;
+    box-shadow: 0 -2px 5px var(--shadow);
+    z-index: 10;
+}
+
+/* Navigation */
+.game-nav {
+    height: var(--nav-height);
     display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    box-shadow: 0 4px 8px var(--shadow-color);
-}
-
-/* Notification */
-.notification {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%) translateY(100px);
     background-color: var(--bg-secondary);
-    color: var(--text-color);
-    padding: 0.75rem 1.5rem;
-    border-radius: var(--border-radius);
-    box-shadow: 0 4px 8px var(--shadow-color);
-    z-index: 900;
-    opacity: 0;
-    transition: all 0.3s ease;
+    box-shadow: 0 -2px 5px var(--shadow);
+    z-index: 10;
 }
 
-.notification.active {
-    transform: translateX(-50%) translateY(0);
-    opacity: 1;
+/* Utility Classes */
+.hidden {
+    display: none !important;
 }
 
-/* Inventory */
-.inventory-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 1rem;
-    padding: 1rem;
-}
-
-/* Animation Keyframes */
-@keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-    100% { transform: translateY(0px); }
-}
-
-/* Media Queries for Responsive Design */
-@media (max-width: 768px) {
-    .modal-content {
-        padding: 1.5rem;
+/* Media Queries */
+@media screen and (min-width: 768px) {
+    .shop-displays {
+        grid-template-columns: repeat(3, 1fr);
     }
     
+    .canvas-container {
+        width: 400px;
+        height: 400px;
+    }
+    
+    #artCanvas {
+        width: 400px;
+        height: 400px;
+    }
+    
+    .art-tools {
+        max-width: 400px;
+    }
+}
+
+@media screen and (min-width: 1024px) {
     .shop-displays {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        grid-template-columns: repeat(3, 1fr);
     }
     
     .inventory-grid {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     }
 }
 
-@media (max-width: 480px) {
-    .tab-button {
-        padding: 0.4rem 0.8rem;
-        font-size: 0.9rem;
-    }
-    
-    h2 {
-        font-size: 1.2rem;
-    }
-    
-    .shop-displays {
-        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-        gap: 0.75rem;
-    }
-    
-    .inventory-grid {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-        gap: 0.75rem;
-    }
-}
-
-/* iOS PWA support */
+/* iOS Specific Adjustments */
 @supports (-webkit-touch-callout: none) {
     body {
         padding-top: env(safe-area-inset-top);
         padding-bottom: calc(env(safe-area-inset-bottom) + var(--nav-height));
+    }
+    
+    .game-nav {
+        padding-bottom: env(safe-area-inset-bottom);
     }
 }
