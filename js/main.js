@@ -28,6 +28,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Create placeholder image paths
     createPlaceholderImagePaths();
+    
+    // Default to Art Studio tab for new players
+    if (!gameState.tutorialComplete) {
+        // Will be switched to studio after tutorial
+    } else {
+        // For returning players who've completed the tutorial
+        switchTab('studio');
+    }
 });
 
 // Create placeholder image paths
