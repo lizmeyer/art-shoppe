@@ -120,4 +120,164 @@ function createProductFallback(productId, container) {
             sleeveRight.style.borderRadius = '5px';
             sleeveRight.style.backgroundColor = 'white';
             
-            placeholder.appendChil
+            shirtBase.appendChild(collar);
+            shirtBase.appendChild(sleeveLeft);
+            shirtBase.appendChild(sleeveRight);
+            placeholder.appendChild(shirtBase);
+            break;
+            
+        case 'poster':
+            // Create a poster shape
+            const posterBase = document.createElement('div');
+            posterBase.style.width = '70%';
+            posterBase.style.height = '90%';
+            posterBase.style.border = '3px solid #664e56';
+            posterBase.style.backgroundColor = 'white';
+            
+            // Add small details to make it look like a poster
+            const line1 = document.createElement('div');
+            line1.style.width = '80%';
+            line1.style.height = '2px';
+            line1.style.backgroundColor = '#664e56';
+            line1.style.opacity = '0.3';
+            line1.style.margin = '15% auto 5% auto';
+            
+            const line2 = document.createElement('div');
+            line2.style.width = '60%';
+            line2.style.height = '2px';
+            line2.style.backgroundColor = '#664e56';
+            line2.style.opacity = '0.3';
+            line2.style.margin = '0 auto';
+            
+            const line3 = document.createElement('div');
+            line3.style.width = '70%';
+            line3.style.height = '2px';
+            line3.style.backgroundColor = '#664e56';
+            line3.style.opacity = '0.3';
+            line3.style.margin = '5% auto';
+            
+            posterBase.appendChild(line1);
+            posterBase.appendChild(line2);
+            posterBase.appendChild(line3);
+            placeholder.appendChild(posterBase);
+            break;
+            
+        default:
+            // Default square for unknown product types
+            const defaultBox = document.createElement('div');
+            defaultBox.style.width = '70%';
+            defaultBox.style.height = '70%';
+            defaultBox.style.border = '3px solid #664e56';
+            defaultBox.style.backgroundColor = 'white';
+            placeholder.appendChild(defaultBox);
+    }
+    
+    // Add product name
+    const nameLabel = document.createElement('div');
+    nameLabel.style.position = 'absolute';
+    nameLabel.style.bottom = '5px';
+    nameLabel.style.left = '0';
+    nameLabel.style.right = '0';
+    nameLabel.style.textAlign = 'center';
+    nameLabel.style.fontSize = '12px';
+    nameLabel.style.fontWeight = 'bold';
+    nameLabel.style.color = '#664e56';
+    
+    switch(productId) {
+        case 'mug':
+            nameLabel.textContent = 'Mug';
+            break;
+        case 'tote':
+            nameLabel.textContent = 'Tote Bag';
+            break;
+        case 'shirt':
+            nameLabel.textContent = 'T-Shirt';
+            break;
+        case 'poster':
+            nameLabel.textContent = 'Poster';
+            break;
+        default:
+            nameLabel.textContent = 'Product';
+    }
+    
+    placeholder.appendChild(nameLabel);
+    container.appendChild(placeholder);
+    return placeholder;
+}
+
+// Create fallback UI icons
+function createIconFallback(iconType, container) {
+    const iconWrapper = document.createElement('div');
+    iconWrapper.style.display = 'inline-flex';
+    iconWrapper.style.justifyContent = 'center';
+    iconWrapper.style.alignItems = 'center';
+    
+    switch(iconType) {
+        case 'coin':
+            // Create coin circle
+            const coin = document.createElement('div');
+            coin.style.width = '20px';
+            coin.style.height = '20px';
+            coin.style.borderRadius = '50%';
+            coin.style.backgroundColor = '#FFD700';
+            coin.style.border = '1px solid #B8860B';
+            iconWrapper.appendChild(coin);
+            break;
+            
+        case 'paintbrush':
+            // Create paintbrush shape
+            const brush = document.createElement('div');
+            brush.style.width = '30px';
+            brush.style.height = '60px';
+            brush.style.backgroundColor = 'blue';
+            brush.style.borderRadius = '0 0 5px 5px';
+            
+            const bristles = document.createElement('div');
+            bristles.style.width = '20px';
+            bristles.style.height = '15px';
+            bristles.style.backgroundColor = 'gold';
+            bristles.style.borderRadius = '0 0 10px 10px';
+            bristles.style.position = 'relative';
+            bristles.style.left = '5px';
+            
+            iconWrapper.appendChild(brush);
+            iconWrapper.appendChild(bristles);
+            break;
+            
+        default:
+            // Default circle
+            const defaultIcon = document.createElement('div');
+            defaultIcon.style.width = '20px';
+            defaultIcon.style.height = '20px';
+            defaultIcon.style.borderRadius = '50%';
+            defaultIcon.style.backgroundColor = '#FFD700';
+            defaultIcon.style.border = '1px solid #B8860B';
+            iconWrapper.appendChild(defaultIcon);
+    }
+    
+    container.appendChild(iconWrapper);
+    return iconWrapper;
+}
+
+// Try to load an image with fallback
+function loadImageWithFallback(imgElement, src, fallbackType, container) {
+    // Try to load the image
+    imgElement.onerror = function() {
+        // Image failed to load, create fallback
+        imgElement.style.display = 'none';
+        if (fallbackType.startsWith('product-')) {
+            createProductFallback(fallbackType.replace('product-', ''), container);
+        } else {
+            createIconFallback(fallbackType, container);
+        }
+    };
+    
+    imgElement.src = src;
+}
+
+// Update the createProductOptions function in painter.js to use fallbacks
+function updateCreateProductOptions() {
+    // This function would modify the painter.js file to use the fallback images
+    // In reality, this would be directly integrated into the painter.js code
+    console.log('Product fallbacks enabled');
+}
