@@ -63,6 +63,24 @@
     font-size: 0.8rem;
 }
 
+ .created-product {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 1rem 0;
+        padding: 1rem;
+        background-color: white;
+        border-radius: var(--border-radius);
+        min-height: 200px;
+    }
+    
+    /* Fix for mobile web app meta tags warning */
+    @media (max-width: 768px) {
+        .created-product {
+            padding: 0.5rem;
+        }
+    }
+
 /* Shop Display Items */
 .shop-display {
     background-color: white;
