@@ -641,6 +641,18 @@
   });
 </script>
 
+    <script src="canvas-painter.js"></script>
+<script>
+  // Fallback initialization in case DOMContentLoaded already fired
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(() => {
+      if (typeof CanvasPainter !== 'undefined') {
+        CanvasPainter.init();
+      }
+    }, 1000);
+  }
+</script>
+    
     
 </body>
 </html>
