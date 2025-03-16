@@ -14,6 +14,7 @@ const shopState = {
 
 // Initialize the shop display
 function initializeShop() {
+    console.log("Initializing shop...");
     renderShopDisplays();
     setupShopEvents();
 }
@@ -21,12 +22,18 @@ function initializeShop() {
 // Render shop display spots
 function renderShopDisplays() {
     const displaysContainer = document.getElementById('shopDisplays');
+    if (!displaysContainer) {
+        console.error("Shop displays container not found!");
+        return;
+    }
+    
     displaysContainer.innerHTML = '';
     
     gameState.shopDisplays.forEach(display => {
         const displayEl = document.createElement('div');
         displayEl.className = 'shop-display';
         displayEl.id = display.id;
+        displayEl.style.cursor = 'pointer';
         
         if (display.filled && display.productId) {
             displayEl.classList.add('filled');
@@ -41,27 +48,29 @@ function renderShopDisplays() {
                 // Image container
                 const imageContainer = document.createElement('div');
                 imageContainer.className = 'shop-display-image';
+                imageContainer.style.position = 'relative';
                 
                 // Base product image
                 const baseImg = document.createElement('img');
                 baseImg.src = template.image;
                 baseImg.className = 'product-base';
+                baseImg.style.width = '100%';
+                baseImg.style.height = '100%';
+                baseImg.style.objectFit = 'contain';
+                
+                // Get art position
+                const artPosition = product.customArtPosition || getArtPosition(product.templateId);
                 
                 // Art overlay
                 const artImg = document.createElement('img');
                 artImg.src = product.artUrl;
                 artImg.className = 'product-art';
-                
-                // Apply positioning
-                const pos = template.artPosition;
-                artImg.style.top = `${pos.y / 4}px`;
-                artImg.style.left = `${pos.x / 4}px`;
-                artImg.style.width = `${pos.width / 4}px`;
-                artImg.style.height = `${pos.height / 4}px`;
-                
-                if (pos.rotation) {
-                    artImg.style.transform = `rotate(${pos.rotation}deg)`;
-                }
+                artImg.style.position = 'absolute';
+                artImg.style.top = artPosition.top;
+                artImg.style.left = artPosition.left;
+                artImg.style.width = artPosition.width;
+                artImg.style.height = artPosition.height;
+                artImg.style.mixBlendMode = 'multiply';
                 
                 imageContainer.appendChild(baseImg);
                 imageContainer.appendChild(artImg);
@@ -73,6 +82,9 @@ function renderShopDisplays() {
                 const coinImg = document.createElement('img');
                 coinImg.src = 'images/ui/coin.png';
                 coinImg.alt = 'coins';
+                coinImg.onerror = function() {
+                    this.outerHTML = '<span style="font-size: 1.2rem;">🪙</span>';
+                };
                 
                 const priceText = document.createElement('span');
                 priceText.textContent = product.price;
@@ -94,48 +106,123 @@ function renderShopDisplays() {
         
         displaysContainer.appendChild(displayEl);
     });
+    
+    // Add click handlers for displays
+    addDisplayClickHandlers();
 }
 
-// Set up shop event listeners
-function setupShopEvents() {
-    // Display click events
-    document.querySelectorAll('.shop-display').forEach(displayEl => {
-        displayEl.addEventListener('click', () => {
-            const displayId = displayEl.id;
-            const display = gameState.shopDisplays.find(d => d.id === displayId);
+// Add click handlers to shop displays
+function addDisplayClickHandlers() {
+    document.querySelectorAll('.shop-display').forEach(display => {
+        display.addEventListener('click', function() {
+            const displayId = this.id;
+            const isFilled = this.classList.contains('filled');
             
             if (shopState.dayInProgress) {
                 showNotification('Cannot change displays while shop is open!');
                 return;
             }
             
-            if (display.filled) {
-                // Remove the product from display
-                if (removeFromDisplay(displayId)) {
-                    renderShopDisplays();
-                    showNotification('Product removed from display');
-                }
+            if (isFilled) {
+                // Show confirmation for filled displays
+                showDisplayOptions(displayId);
             } else {
-                // Show inventory to select a product
+                // Show inventory for empty displays
                 showInventoryForDisplay(displayId);
             }
         });
     });
+}
+
+// Show options for a displayed product
+function showDisplayOptions(displayId) {
+    // Find display information
+    const display = gameState.shopDisplays.find(d => d.id === displayId);
+    if (!display || !display.productId) return;
     
-    // Start day button (let's add this to the main UI)
-    const startDayBtn = document.createElement('button');
-    startDayBtn.id = 'startDayBtn';
-    startDayBtn.className = 'accent-button';
-    startDayBtn.textContent = 'Open Shop';
-    startDayBtn.addEventListener('click', startDay);
+    // Find the product
+    const product = gameState.inventory.find(p => p.id === display.productId);
+    if (!product) return;
     
-    // Add it to shop tab
-    const shopTab = document.getElementById('shopTab');
+    // Create modal
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
     
-    // Only add if it doesn't exist yet
-    if (!document.getElementById('startDayBtn')) {
-        shopTab.appendChild(startDayBtn);
-    }
+    const modalContent = document.createElement('div');
+    modalContent.className = 'modal-content';
+    
+    const title = document.createElement('h2');
+    title.textContent = product.name;
+    
+    // Product display area
+    const productDisplay = document.createElement('div');
+    productDisplay.style.position = 'relative';
+    productDisplay.style.width = '200px';
+    productDisplay.style.height = '200px';
+    productDisplay.style.margin = '0 auto 20px auto';
+    
+    // Base product image
+    const template = getProductTemplate(product.templateId);
+    const baseImg = document.createElement('img');
+    baseImg.src = product.imageUrl;
+    baseImg.alt = product.name;
+    baseImg.style.width = '100%';
+    baseImg.style.height = '100%';
+    baseImg.style.objectFit = 'contain';
+    
+    // Get art position
+    const artPosition = product.customArtPosition || getArtPosition(product.templateId);
+    
+    // Art overlay
+    const artImg = document.createElement('img');
+    artImg.src = product.artUrl;
+    artImg.alt = "Your Design";
+    artImg.style.position = 'absolute';
+    artImg.style.top = artPosition.top;
+    artImg.style.left = artPosition.left;
+    artImg.style.width = artPosition.width;
+    artImg.style.height = artPosition.height;
+    artImg.style.mixBlendMode = 'multiply';
+    
+    productDisplay.appendChild(baseImg);
+    productDisplay.appendChild(artImg);
+    
+    // Price info
+    const priceInfo = document.createElement('p');
+    priceInfo.innerHTML = `Price: <strong>${product.price} coins</strong>`;
+    
+    // Action buttons
+    const actionArea = document.createElement('div');
+    actionArea.style.display = 'flex';
+    actionArea.style.gap = '10px';
+    actionArea.style.justifyContent = 'center';
+    actionArea.style.marginTop = '20px';
+    
+    const removeBtn = document.createElement('button');
+    removeBtn.textContent = 'Remove from Display';
+    removeBtn.className = 'accent-button';
+    removeBtn.addEventListener('click', () => {
+        removeFromDisplay(displayId);
+        renderShopDisplays();
+        closeModal();
+        showNotification('Product removed from display');
+    });
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', closeModal);
+    
+    actionArea.appendChild(removeBtn);
+    actionArea.appendChild(cancelBtn);
+    
+    // Assemble modal
+    modalContent.appendChild(title);
+    modalContent.appendChild(productDisplay);
+    modalContent.appendChild(priceInfo);
+    modalContent.appendChild(actionArea);
+    
+    modal.appendChild(modalContent);
+    document.body.appendChild(modal);
 }
 
 // Show inventory modal to select a product for display
@@ -171,27 +258,30 @@ function showInventoryForDisplay(displayId) {
             // Create preview container
             const previewContainer = document.createElement('div');
             previewContainer.className = 'inventory-item-image';
+            previewContainer.style.position = 'relative';
             
             // Base product image
             const baseImg = document.createElement('img');
-            baseImg.src = template.image;
+            baseImg.src = product.imageUrl;
+            baseImg.alt = product.name;
             baseImg.style.width = '100%';
             baseImg.style.height = '100%';
-            baseImg.style.position = 'absolute';
-            baseImg.style.top = '0';
-            baseImg.style.left = '0';
+            baseImg.style.objectFit = 'contain';
+            
+            // Get art position
+            const artPosition = product.customArtPosition || getArtPosition(product.templateId);
             
             // Art overlay
             const artImg = document.createElement('img');
             artImg.src = product.artUrl;
+            artImg.alt = "Custom Art";
             artImg.style.position = 'absolute';
-            artImg.style.top = '0';
-            artImg.style.left = '0';
-            artImg.style.width = '100%';
-            artImg.style.height = '100%';
-            artImg.style.objectFit = 'contain';
+            artImg.style.top = artPosition.top;
+            artImg.style.left = artPosition.left;
+            artImg.style.width = artPosition.width;
+            artImg.style.height = artPosition.height;
+            artImg.style.mixBlendMode = 'multiply';
             
-            previewContainer.style.position = 'relative';
             previewContainer.appendChild(baseImg);
             previewContainer.appendChild(artImg);
             
@@ -208,6 +298,9 @@ function showInventoryForDisplay(displayId) {
             
             const coinImg = document.createElement('img');
             coinImg.src = 'images/ui/coin.png';
+            coinImg.onerror = function() {
+                this.outerHTML = '<span style="font-size: 1.2rem;">🪙</span>';
+            };
             
             const priceText = document.createElement('span');
             priceText.textContent = product.price;
@@ -261,6 +354,24 @@ function closeModal() {
     });
 }
 
+// Set up shop event listeners
+function setupShopEvents() {
+    // Start day button (let's add this to the main UI)
+    const startDayBtn = document.createElement('button');
+    startDayBtn.id = 'startDayBtn';
+    startDayBtn.className = 'accent-button';
+    startDayBtn.textContent = 'Open Shop';
+    startDayBtn.addEventListener('click', startDay);
+    
+    // Add it to shop tab
+    const shopTab = document.getElementById('shopTab');
+    
+    // Only add if it doesn't exist yet
+    if (shopTab && !document.getElementById('startDayBtn')) {
+        shopTab.appendChild(startDayBtn);
+    }
+}
+
 // Start a new shop day
 function startDay() {
     if (shopState.dayInProgress) return;
@@ -277,8 +388,11 @@ function startDay() {
     shopState.activeCustomers = [];
     
     // Update UI
-    document.getElementById('startDayBtn').textContent = 'Shop is Open';
-    document.getElementById('startDayBtn').disabled = true;
+    const startDayBtn = document.getElementById('startDayBtn');
+    if (startDayBtn) {
+        startDayBtn.textContent = 'Shop is Open';
+        startDayBtn.disabled = true;
+    }
     
     // Schedule customer spawns
     scheduleCustomers();
@@ -345,6 +459,7 @@ function spawnCustomer() {
 // Create a customer DOM element
 function createCustomerElement(customer) {
     const customerArea = document.getElementById('customerArea');
+    if (!customerArea) return;
     
     const customerEl = document.createElement('div');
     customerEl.className = 'customer';
@@ -358,13 +473,17 @@ function createCustomerElement(customer) {
     avatar.className = 'customer-avatar';
     
     // Use actual image or emoji based on customer type
-    if (customer.avatar.startsWith('images/')) {
+    if (customer.avatar && customer.avatar.startsWith('images/')) {
         const avatarImg = document.createElement('img');
         avatarImg.src = customer.avatar;
         avatarImg.alt = customer.type;
+        avatarImg.onerror = function() {
+            this.style.display = 'none';
+            avatar.textContent = '👤'; // Fallback emoji
+        };
         avatar.appendChild(avatarImg);
     } else {
-        avatar.textContent = customer.avatar;
+        avatar.textContent = customer.avatar || '👤';
     }
     
     const thoughts = document.createElement('div');
@@ -427,12 +546,14 @@ function startBrowsing(customer) {
             
             // Move toward the display
             const displayEl = document.getElementById(display.id);
-            const rect = displayEl.getBoundingClientRect();
+            const rect = displayEl ? displayEl.getBoundingClientRect() : null;
             const viewportWidth = window.innerWidth;
-            const displayPosition = (rect.left + rect.width / 2) / viewportWidth * 100;
+            const displayPosition = rect ? (rect.left + rect.width / 2) / viewportWidth * 100 : customer.targetPosition;
             
             const customerEl = document.getElementById(customer.id);
-            customerEl.style.transform = `translateX(${displayPosition - 5}vw)`;
+            if (customerEl) {
+                customerEl.style.transform = `translateX(${displayPosition - 5}vw)`;
+            }
             
             // Start buying process after a delay
             setTimeout(() => {
@@ -537,23 +658,33 @@ function decideToBuy(customer) {
         
         // Add purchase animation/effects here
         const displayEl = document.getElementById(display.id);
-        displayEl.classList.add('sold');
-        
-        setTimeout(() => {
-            displayEl.classList.remove('sold');
+        if (displayEl) {
+            displayEl.classList.add('sold');
             
-            // Process the sale
+            setTimeout(() => {
+                displayEl.classList.remove('sold');
+                
+                // Process the sale
+                if (sellProduct(product.id, product.price)) {
+                    renderShopDisplays();
+                    updateCoins();
+                    
+                    // Show notification
+                    showNotification(`Sold ${product.name} for ${product.price} coins!`);
+                }
+                
+                // Customer leaves happy
+                leaveShop(customer);
+            }, 1000);
+        } else {
+            // No display element, still process the sale
             if (sellProduct(product.id, product.price)) {
                 renderShopDisplays();
                 updateCoins();
-                
-                // Show notification
                 showNotification(`Sold ${product.name} for ${product.price} coins!`);
             }
-            
-            // Customer leaves happy
             leaveShop(customer);
-        }, 1000);
+        }
     } else {
         // Decide not to buy
         showCustomerThoughts(customer, "Actually, not today.");
@@ -588,8 +719,11 @@ function endDay() {
     clearTimeout(shopState.customerTimer);
     
     // Update UI
-    document.getElementById('startDayBtn').textContent = 'Open Shop';
-    document.getElementById('startDayBtn').disabled = false;
+    const startDayBtn = document.getElementById('startDayBtn');
+    if (startDayBtn) {
+        startDayBtn.textContent = 'Open Shop';
+        startDayBtn.disabled = false;
+    }
     
     // Show day summary
     showDaySummary();
@@ -657,332 +791,34 @@ function showDaySummary() {
     document.body.appendChild(modal);
 }
 
-// Function to fix the "Click to add a product" functionality
-function fixShopDisplays() {
-    console.log("Fixing shop displays...");
-    
-    // Get all empty display spots
-    const emptyDisplays = document.querySelectorAll('.shop-display:not(.filled)');
-    
-    emptyDisplays.forEach(display => {
-        // Clear any existing event listeners by cloning and replacing
-        const newDisplay = display.cloneNode(true);
-        display.parentNode.replaceChild(newDisplay, display);
-        
-        // Set cursor style to indicate it's clickable
-        newDisplay.style.cursor = 'pointer';
-        
-        // Add click event listener
-        newDisplay.addEventListener('click', function() {
-            const displayId = this.id;
-            
-            // Check if shop is open
-            if (shopState && shopState.dayInProgress) {
-                showNotification('Cannot change displays while shop is open!');
-                return;
-            }
-            
-            // Show inventory to select a product
-            showInventoryForDisplay(displayId);
-        });
-    });
-}
-
-// Modify the existing renderShopDisplays function
-const originalRenderShopDisplays = renderShopDisplays;
-renderShopDisplays = function() {
-    // Call original function
-    originalRenderShopDisplays();
-    
-    // Then fix the click handlers
-    setTimeout(fixShopDisplays, 100);
-};
-
-// Function to show inventory for selecting a product
-function showInventoryForDisplay(displayId) {
-    // Create modal
-    const modal = document.createElement('div');
-    modal.className = 'modal active';
-    modal.id = 'inventoryModal';
-    
-    const modalContent = document.createElement('div');
-    modalContent.className = 'modal-content';
-    
-    const title = document.createElement('h2');
-    title.textContent = 'Select a Product to Display';
-    
-    const productsGrid = document.createElement('div');
-    productsGrid.className = 'inventory-grid';
-    
-    // Filter for products not already displayed
-    const availableProducts = gameState.inventory.filter(p => !p.displayed);
-    
-    if (availableProducts.length === 0) {
-        const noProducts = document.createElement('p');
-        noProducts.textContent = 'No products available. Create some in the Art Studio!';
-        productsGrid.appendChild(noProducts);
-    } else {
-        availableProducts.forEach(product => {
-            const template = getProductTemplate(product.templateId);
-            
-            const productEl = document.createElement('div');
-            productEl.className = 'inventory-item';
-            
-            // Create preview container
-            const previewContainer = document.createElement('div');
-            previewContainer.className = 'inventory-item-image';
-            previewContainer.style.position = 'relative';
-            
-            // Product base image
-            const baseImg = document.createElement('img');
-            baseImg.src = product.imageUrl;
-            baseImg.alt = product.name;
-            baseImg.style.width = '100%';
-            baseImg.style.height = '100%';
-            baseImg.style.objectFit = 'contain';
-            
-            // Get art position
-            const artPosition = product.customArtPosition || getArtPosition(product.templateId);
-            
-            // Art overlay
-            const artImg = document.createElement('img');
-            artImg.src = product.artUrl;
-            artImg.alt = "Custom Art";
-            artImg.style.position = 'absolute';
-            artImg.style.top = artPosition.top;
-            artImg.style.left = artPosition.left;
-            artImg.style.width = artPosition.width;
-            artImg.style.height = artPosition.height;
-            artImg.style.mixBlendMode = 'multiply';
-            
-            previewContainer.appendChild(baseImg);
-            previewContainer.appendChild(artImg);
-            
-            // Product details
-            const details = document.createElement('div');
-            details.className = 'inventory-item-details';
-            
-            const name = document.createElement('div');
-            name.className = 'inventory-item-name';
-            name.textContent = product.name;
-            
-            const price = document.createElement('div');
-            price.className = 'inventory-item-price';
-            
-            const coinImg = document.createElement('img');
-            coinImg.src = 'images/ui/coin.png';
-            coinImg.onerror = function() {
-                this.outerHTML = '🪙';
-            };
-            
-            const priceText = document.createElement('span');
-            priceText.textContent = product.price;
-            
-            price.appendChild(coinImg);
-            price.appendChild(priceText);
-            
-            details.appendChild(name);
-            details.appendChild(price);
-            
-            productEl.appendChild(previewContainer);
-            productEl.appendChild(details);
-            
-            // Add click event
-            productEl.addEventListener('click', function() {
-                if (displayProduct(product.id, displayId)) {
-                    renderShopDisplays();
-                    closeModal();
-                    showNotification('Product added to display!');
-                }
-            });
-            
-            productsGrid.appendChild(productEl);
-        });
-    }
-    
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = 'Cancel';
-    closeBtn.addEventListener('click', closeModal);
-    
-    modalContent.appendChild(title);
-    modalContent.appendChild(productsGrid);
-    modalContent.appendChild(closeBtn);
-    
-    modal.appendChild(modalContent);
-    document.body.appendChild(modal);
-}
-// Direct fix for shop displays - Add this to the end of your shop.js file
-document.addEventListener('DOMContentLoaded', function() {
-    // Wait for page to fully load
-    setTimeout(function() {
-        // Fix click handlers for empty shop displays
-        fixEmptyDisplays();
-        
-        // Add click event listener to handle future updates
-        document.addEventListener('click', function(e) {
-            // Check if we clicked on a shop display or its child
-            let target = e.target;
-            while (target && !target.classList.contains('shop-display')) {
-                target = target.parentElement;
-            }
-            
-            // If we found a shop display
-            if (target && target.classList.contains('shop-display') && !target.classList.contains('filled')) {
-                e.stopPropagation();
-                handleEmptyDisplayClick(target.id);
-            }
-        }, true);
-    }, 1000);
-});
-
-// Function to fix empty display spots
-function fixEmptyDisplays() {
-    // Find all empty display spots
-    document.querySelectorAll('.shop-display:not(.filled)').forEach(display => {
-        // Add visual indicator that it's clickable
-        display.style.cursor = 'pointer';
-        
-        // Add click event directly
-        display.onclick = function() {
-            handleEmptyDisplayClick(this.id);
-        };
-    });
-}
-
-// Handle click on empty display
-function handleEmptyDisplayClick(displayId) {
-    console.log("Clicked on empty display:", displayId);
-    
-    // Check if shop is open
-    if (window.shopState && window.shopState.dayInProgress) {
-        if (typeof showNotification === 'function') {
-            showNotification('Cannot change displays while shop is open!');
-        } else {
-            alert('Cannot change displays while shop is open!');
-        }
-        return;
-    }
-    
-    // Simple inventory selection
-    openInventorySelector(displayId);
-}
-
-// Open a simple inventory selector
-function openInventorySelector(displayId) {
-    // Create a simple modal
-    const modal = document.createElement('div');
-    modal.style.position = 'fixed';
-    modal.style.top = '0';
-    modal.style.left = '0';
-    modal.style.width = '100%';
-    modal.style.height = '100%';
-    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-    modal.style.display = 'flex';
-    modal.style.justifyContent = 'center';
-    modal.style.alignItems = 'center';
-    modal.style.zIndex = '1000';
-    
-    // Modal content
-    const content = document.createElement('div');
-    content.style.backgroundColor = '#fff5f7';
-    content.style.borderRadius = '12px';
-    content.style.padding = '20px';
-    content.style.maxWidth = '90%';
-    content.style.maxHeight = '90%';
-    content.style.overflow = 'auto';
-    
-    // Title
-    const title = document.createElement('h2');
-    title.textContent = 'Select a Product to Display';
-    title.style.marginBottom = '15px';
-    
-    content.appendChild(title);
-    
-    // Get available products
-    const availableProducts = window.gameState.inventory.filter(p => !p.displayed);
-    
-    if (availableProducts.length === 0) {
-        const noProducts = document.createElement('p');
-        noProducts.textContent = 'No products available. Create some in the Art Studio!';
-        content.appendChild(noProducts);
-    } else {
-        // Create a grid
-        const grid = document.createElement('div');
-        grid.style.display = 'grid';
-        grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(150px, 1fr))';
-        grid.style.gap = '15px';
-        
-        // Add products
-        availableProducts.forEach(product => {
-            const productEl = document.createElement('div');
-            productEl.style.border = '1px solid #ffb8c6';
-            productEl.style.borderRadius = '8px';
-            productEl.style.padding = '10px';
-            productEl.style.cursor = 'pointer';
-            productEl.style.backgroundColor = 'white';
-            
-            // Product image
-            const img = document.createElement('img');
-            img.src = product.imageUrl;
-            img.alt = product.name;
-            img.style.width = '100%';
-            img.style.height = 'auto';
-            img.style.marginBottom = '10px';
-            
-            // Product name
-            const name = document.createElement('p');
-            name.textContent = product.name;
-            name.style.margin = '5px 0';
-            name.style.fontWeight = 'bold';
-            
-            // Product price
-            const price = document.createElement('p');
-            price.textContent = `${product.price} coins`;
-            
-            productEl.appendChild(img);
-            productEl.appendChild(name);
-            productEl.appendChild(price);
-            
-            // Click handler
-            productEl.onclick = function() {
-                // Display the product
-                window.displayProduct(product.id, displayId);
-                
-                // Close modal
-                document.body.removeChild(modal);
-                
-                // Refresh displays
-                if (typeof window.renderShopDisplays === 'function') {
-                    window.renderShopDisplays();
-                }
-                
-                // Show notification
-                if (typeof window.showNotification === 'function') {
-                    window.showNotification('Product added to display!');
-                }
-            };
-            
-            grid.appendChild(productEl);
-        });
-        
-        content.appendChild(grid);
-    }
-    
-    // Add close button
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = 'Cancel';
-    closeBtn.style.marginTop = '20px';
-    closeBtn.style.padding = '8px 16px';
-    closeBtn.style.backgroundColor = '#ffb8c6';
-    closeBtn.style.border = 'none';
-    closeBtn.style.borderRadius = '8px';
-    closeBtn.style.cursor = 'pointer';
-    
-    closeBtn.onclick = function() {
-        document.body.removeChild(modal);
+// Get standardized art positioning based on product type
+function getArtPosition(productId) {
+    // Default positioning
+    let position = {
+        top: '25%',
+        left: '25%',
+        width: '50%',
+        height: '50%'
     };
     
-    content.appendChild(closeBtn);
-    modal.appendChild(content);
-    document.body.appendChild(modal);
-}
+    // Product-specific positioning
+    switch(productId) {
+        case 'mug':
+            position = {
+                top: '30%',
+                left: '30%',
+                width: '40%',
+                height: '40%'
+            };
+            break;
+        case 'tote':
+            position = {
+                top: '25%',
+                left: '25%',
+                width: '50%',
+                height: '50%'
+            };
+            break;
+        case 'shirt':
+            position = {
+                top: '25%',
