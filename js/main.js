@@ -4,59 +4,179 @@
  */
 
 // Initialize the game when document is loaded
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Document loaded, starting game initialization...");
+    
     // Start loading screen
     initializeLoadingScreen();
     
-    // Initialize game state
-    initGame();
+    // Verify script loading
+    checkScriptsLoaded();
     
-    // Apply saved theme
-    setTheme(gameState.activeTheme);
-    
-    // Update UI components
-    updateCoins();
-    updateDayCounter();
-    
-    // Set up UI event listeners
-    setupUIEvents();
-    
-    // Initialize game components
-    initializeShop();
-    initializeInventory();
-    initializePainter();
-    
-    // Create placeholder image paths
-    createPlaceholderImagePaths();
-    
-    // Default to Art Studio tab for new players
-    if (!gameState.tutorialComplete) {
-        // Will be switched to studio after tutorial
-    } else {
-        // For returning players who've completed the tutorial
-        switchTab('studio');
-    }
+    // Initialize game with appropriate timing
+    setTimeout(initializeGame, 500);
 });
 
-// Create placeholder image paths
-function createPlaceholderImagePaths() {
-    // In a real game, we'd have proper assets
-    // For this demo, we'll create the folder structure and set up dummy image paths
-    
-    // Create image folders in localStorage for simulating file structure
-    const imageFolders = {
-        'images/ui': ['coin.png', 'paint-brush.png', 'app-icon.png'],
-        'images/customers': ['default.png', 'trendy.png', 'artsy.png', 'casual.png'],
-        'images/products': ['mug.png', 'tshirt.png', 'tote.png', 'poster.png']
+// Check if all required scripts are properly loaded
+function checkScriptsLoaded() {
+    const requiredFunctions = {
+        'initGame': 'gameState.js',
+        'updateCoins': 'ui.js',
+        'initializePainter': 'painter.js',
+        'initializeShop': 'shop.js',
+        'initializeInventory': 'inventory.js'
     };
     
-    // Simulate image paths
-    Object.keys(imageFolders).forEach(folder => {
-        imageFolders[folder].forEach(image => {
-            // In a real game, we'd use actual images
-            // Here we're just setting up the structure
-        });
-    });
+    const missingScripts = [];
+    
+    for (const [func, script] of Object.entries(requiredFunctions)) {
+        if (typeof window[func] !== 'function') {
+            console.error(`Required function "${func}" from "${script}" is not loaded`);
+            missingScripts.push(script);
+        }
+    }
+    
+    if (missingScripts.length > 0) {
+        console.warn(`Missing scripts: ${missingScripts.join(', ')}. Some functionality may not work.`);
+    }
+}
+
+// Initialize the game components
+function initializeGame() {
+    console.log("Initializing game components...");
+    
+    try {
+        // Initialize game state
+        initGame();
+        
+        // Apply saved theme
+        if (typeof setTheme === 'function') {
+            setTheme(gameState.activeTheme);
+        }
+        
+        // Update UI components
+        updateCoins();
+        updateDayCounter();
+        
+        // Set up UI event listeners
+        setupUIEvents();
+        
+        // Initialize game components with retry mechanism
+        initializeWithRetry('shop', initializeShop);
+        initializeWithRetry('inventory', initializeInventory);
+        initializeWithRetry('painter', initializePainter);
+        
+        // Create placeholder image paths if needed
+        if (typeof createPlaceholderImagePaths === 'function') {
+            createPlaceholderImagePaths();
+        }
+        
+        // Default to Art Studio tab for new players
+        if (!gameState.tutorialComplete) {
+            // Will be switched to studio after tutorial
+            console.log("New player - tutorial will show");
+        } else {
+            // For returning players, switch to studio
+            console.log("Returning player - switching to studio tab");
+            if (typeof switchTab === 'function') {
+                switchTab('studio');
+            }
+        }
+        
+        // Hide loading screen
+        setTimeout(function() {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.opacity = '0';
+                setTimeout(function() {
+                    loadingOverlay.style.display = 'none';
+                }, 500);
+            }
+        }, 1000);
+        
+        console.log("Game initialization complete");
+    } catch (e) {
+        console.error("Game initialization failed:", e);
+        showStartupError(e);
+    }
+}
+
+// Initialize component with retry mechanism
+function initializeWithRetry(name, initFunction, maxRetries = 3) {
+    let retries = 0;
+    
+    function tryInit() {
+        try {
+            console.log(`Initializing ${name}...`);
+            initFunction();
+            console.log(`${name} initialized successfully`);
+        } catch (e) {
+            console.error(`Error initializing ${name}:`, e);
+            retries++;
+            
+            if (retries < maxRetries) {
+                console.log(`Retrying ${name} initialization (${retries}/${maxRetries})...`);
+                setTimeout(tryInit, 300 * retries);
+            } else {
+                console.error(`Failed to initialize ${name} after ${maxRetries} attempts`);
+            }
+        }
+    }
+    
+    tryInit();
+}
+
+// Loading screen functions
+function initializeLoadingScreen() {
+    const loadingBar = document.getElementById('loadingBar');
+    if (!loadingBar) return;
+    
+    let progress = 0;
+    
+    const interval = setInterval(() => {
+        progress += 5;
+        loadingBar.style.width = `${progress}%`;
+        
+        if (progress >= 100) {
+            clearInterval(interval);
+        }
+    }, 100);
+}
+
+// Display error message if startup fails
+function showStartupError(error) {
+    // Create error message if not exists
+    let errorEl = document.getElementById('startupError');
+    if (!errorEl) {
+        errorEl = document.createElement('div');
+        errorEl.id = 'startupError';
+        errorEl.style.position = 'fixed';
+        errorEl.style.top = '50%';
+        errorEl.style.left = '50%';
+        errorEl.style.transform = 'translate(-50%, -50%)';
+        errorEl.style.backgroundColor = 'rgba(255, 200, 200, 0.95)';
+        errorEl.style.padding = '20px';
+        errorEl.style.borderRadius = '10px';
+        errorEl.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.3)';
+        errorEl.style.zIndex = '9999';
+        errorEl.style.maxWidth = '80%';
+        
+        document.body.appendChild(errorEl);
+    }
+    
+    errorEl.innerHTML = `
+        <h3 style="color: #d32f2f; margin-top: 0;">Startup Error</h3>
+        <p>There was a problem starting the game:</p>
+        <pre style="background: #fff; padding: 10px; overflow: auto; max-height: 200px; font-size: 12px;">${error.toString()}</pre>
+        <p>Try refreshing the page. If the problem persists, check the console for more details.</p>
+        <button onclick="location.reload()" style="background: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Refresh Page</button>
+    `;
+    
+    // Hide loading screen
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+        loadingOverlay.style.display = 'none';
+    }
 }
 
 // Handle errors
@@ -73,47 +193,43 @@ window.onerror = function(message, source, lineno, colno, error) {
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
         // Game is hidden, pause any animations or timers
-        if (shopState && shopState.dayInProgress) {
+        if (typeof shopState !== 'undefined' && shopState && shopState.dayInProgress) {
             // In a full game, we'd pause the day timer here
+            console.log("Game paused");
         }
     } else {
         // Game is visible again, resume if needed
+        console.log("Game resumed");
     }
 });
 
 // Handle window resize
 window.addEventListener('resize', () => {
     // Adjust canvas size or other responsive elements if needed
-    // In a real game, we'd handle responsiveness more thoroughly
+    console.log("Window resized");
 });
 
-// iOS specific adjustments
-function setupIOSSpecifics() {
-    // Add iOS specific behaviors here
-    // For example, handling PWA installation, preventing bounce effects, etc.
-    
-    // Prevent Safari from bouncing the page when scrolling past the edges
-    document.addEventListener('touchmove', function(e) {
-        if (e.touches.length > 1) return; // Allow pinch zoom
-        
-        // Check if scrollable
-        const element = e.target;
-        const isScrollable = 
-            element.scrollHeight > element.clientHeight &&
-            ['auto', 'scroll'].indexOf(getComputedStyle(element).overflowY) >= 0;
-        
-        if (!isScrollable) {
-            e.preventDefault();
-        }
-    }, { passive: false });
-    
-    // Add to home screen (PWA) support
-    if (window.navigator.standalone) {
-        document.body.classList.add('ios-pwa');
-    }
-}
+// Emergency recovery functions
+window.emergencyReset = function() {
+    console.log("Performing emergency reset...");
+    localStorage.removeItem('cozyArtistShop');
+    location.reload();
+    return "Resetting game...";
+};
 
-// Check if running on iOS
-if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
-    setupIOSSpecifics();
-}
+window.emergencyFixPainter = function() {
+    console.log("Attempting emergency painter fix...");
+    
+    try {
+        // Re-initialize painter
+        if (typeof initializePainter === 'function') {
+            initializePainter();
+            return "Painter reinitialized!";
+        } else {
+            return "initializePainter function not found!";
+        }
+    } catch (e) {
+        console.error("Emergency fix failed:", e);
+        return "Fix failed: " + e.message;
+    }
+};
