@@ -216,22 +216,28 @@ function showTutorial() {
     
     const content = document.createElement('div');
     content.innerHTML = `
-        <p>Welcome! You're now the proud owner of a cute little art shop.</p>
-        <p>Let me show you how to get started:</p>
+        <p>Congratulations! You've just opened your very own art shop in the heart of the cozy town of Meadowview.</p>
         
+        <p>After years of creating art as a hobby, you've finally taken the leap to turn your passion into a business. Your small shop has space to display handcrafted items featuring your unique designs.</p>
+        
+        <p>The townsfolk are excited to see what you'll create, and tourists passing through are always looking for special souvenirs to take home.</p>
+        
+        <h4>How to get started:</h4>
         <ol>
-            <li>Go to the <strong>Art Studio</strong> tab to create your first product</li>
-            <li>Use the painting tools to design your art</li>
-            <li>Apply your art to products like mugs and t-shirts</li>
-            <li>Go to the <strong>Shop</strong> tab to display your products</li>
-            <li>Open your shop to attract customers!</li>
+            <li>First, visit your <strong>Art Studio</strong> to design beautiful art patterns</li>
+            <li>Apply your designs to products like mugs, t-shirts, tote bags, and posters</li>
+            <li>Set appropriate prices in your <strong>Inventory</strong></li>
+            <li>Display your creations in your <strong>Shop</strong></li>
+            <li>Open for business and attract customers!</li>
         </ol>
         
-        <p>Ready to become a successful artist and shopkeeper?</p>
+        <p>Each customer has their own taste and budget. Pay attention to what sells well and create more of what people love!</p>
+        
+        <p>Are you ready to become Meadowview's most beloved artist and shopkeeper?</p>
     `;
     
     const startBtn = document.createElement('button');
-    startBtn.textContent = "Let's Start!";
+    startBtn.textContent = "Begin My Art Journey!";
     startBtn.className = 'accent-button';
     startBtn.addEventListener('click', () => {
         gameState.tutorialComplete = true;
