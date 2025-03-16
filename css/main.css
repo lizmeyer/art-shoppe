@@ -131,17 +131,10 @@ button.active {
     height: 1.5rem;
 }
 
-/* Fallback for coin icon */
-.coin-fallback {
-    font-size: 1.2rem;
-    display: inline-block;
-}
-
-/* Fallback for loading image */
-.loading-image-fallback {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    animation: float 3s infinite ease-in-out;
+.coin-icon {
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
 }
 
 /* Product fallbacks */
