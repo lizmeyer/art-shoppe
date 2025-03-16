@@ -19,7 +19,14 @@ const painter = {
 
 // Initialize the canvas
 function initializePainter() {
+    console.log("Initializing painter...");
     painter.canvas = document.getElementById('paintCanvas');
+    
+    if (!painter.canvas) {
+        console.error("Canvas element not found!");
+        return;
+    }
+    
     painter.ctx = painter.canvas.getContext('2d');
     
     // Set default values
@@ -35,13 +42,17 @@ function initializePainter() {
     createProductOptions();
     
     // Set first product as selected
-    if (productTemplates.length > 0) {
+    if (productTemplates && productTemplates.length > 0) {
         selectProduct(productTemplates[0].id);
     }
+    
+    console.log("Painter initialization complete");
 }
 
 // Reset the canvas to blank
 function resetCanvas() {
+    if (!painter.ctx) return;
+    
     painter.ctx.fillStyle = 'white';
     painter.ctx.fillRect(0, 0, painter.canvas.width, painter.canvas.height);
     updateArtDataUrl();
@@ -49,6 +60,9 @@ function resetCanvas() {
 
 // Set up event listeners for drawing
 function setupPainterEvents() {
+    // First check if elements exist
+    if (!painter.canvas) return;
+    
     // Mouse events
     painter.canvas.addEventListener('mousedown', startDrawing);
     painter.canvas.addEventListener('mousemove', draw);
@@ -61,10 +75,15 @@ function setupPainterEvents() {
     painter.canvas.addEventListener('touchend', stopDrawing);
     
     // Tool buttons
-    document.getElementById('brushTool').addEventListener('click', () => setTool('brush'));
-    document.getElementById('eraserTool').addEventListener('click', () => setTool('eraser'));
-    document.getElementById('fillTool').addEventListener('click', () => setTool('fill'));
-    document.getElementById('clearTool').addEventListener('click', () => resetCanvas());
+    const brushTool = document.getElementById('brushTool');
+    const eraserTool = document.getElementById('eraserTool');
+    const fillTool = document.getElementById('fillTool');
+    const clearTool = document.getElementById('clearTool');
+    
+    if (brushTool) brushTool.addEventListener('click', () => setTool('brush'));
+    if (eraserTool) eraserTool.addEventListener('click', () => setTool('eraser'));
+    if (fillTool) fillTool.addEventListener('click', () => setTool('fill'));
+    if (clearTool) clearTool.addEventListener('click', () => resetCanvas());
     
     // Initialize brush sizes
     document.querySelectorAll('.brush-size').forEach(btn => {
@@ -75,7 +94,10 @@ function setupPainterEvents() {
     });
     
     // Save button
-    document.getElementById('saveProductButton').addEventListener('click', createProduct);
+    const saveBtn = document.getElementById('saveProductButton');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', createProduct);
+    }
 }
 
 // Handle touch start event
@@ -140,6 +162,8 @@ function draw(e) {
 
 // Draw to a specific point
 function drawTo(x, y) {
+    if (!painter.ctx) return;
+    
     painter.ctx.lineJoin = 'round';
     painter.ctx.lineCap = 'round';
     painter.ctx.lineWidth = painter.brushSize;
@@ -173,6 +197,8 @@ function stopDrawing() {
 
 // Update the art data URL for preview
 function updateArtDataUrl() {
+    if (!painter.canvas) return;
+    
     painter.artDataUrl = painter.canvas.toDataURL('image/png');
     updateProductPreview();
 }
@@ -180,22 +206,39 @@ function updateArtDataUrl() {
 // Create the color palette
 function createColorPalette() {
     const colorPicker = document.querySelector('.color-picker');
+    if (!colorPicker) {
+        console.error("Color picker container not found!");
+        return;
+    }
+    
     colorPicker.innerHTML = '';
     
     colorPalette.forEach(color => {
         const swatch = document.createElement('div');
         swatch.className = 'color-swatch';
         swatch.style.backgroundColor = color;
+        swatch.style.width = '30px';
+        swatch.style.height = '30px';
+        swatch.style.borderRadius = '50%';
+        swatch.style.display = 'inline-block';
+        swatch.style.margin = '5px';
+        swatch.style.cursor = 'pointer';
+        swatch.style.border = '2px solid var(--border-color)';
         swatch.dataset.color = color;
         
         if (color === painter.color) {
-            swatch.classList.add('active');
+            swatch.style.border = '2px solid white';
+            swatch.style.boxShadow = '0 0 0 2px var(--text-color)';
         }
         
         swatch.addEventListener('click', () => {
             painter.color = color;
-            document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
-            swatch.classList.add('active');
+            document.querySelectorAll('.color-swatch').forEach(s => {
+                s.style.border = '2px solid var(--border-color)';
+                s.style.boxShadow = 'none';
+            });
+            swatch.style.border = '2px solid white';
+            swatch.style.boxShadow = '0 0 0 2px var(--text-color)';
             
             // If eraser was active, switch back to brush
             if (painter.tool === 'eraser') {
@@ -210,47 +253,80 @@ function createColorPalette() {
 // Create product options
 function createProductOptions() {
     const productSelector = document.querySelector('.product-selector');
+    if (!productSelector) {
+        console.error("Product selector container not found!");
+        return;
+    }
+    
     productSelector.innerHTML = '';
     
     productTemplates.forEach(product => {
         const option = document.createElement('div');
         option.className = 'product-option';
         option.dataset.product = product.id;
+        option.style.padding = '10px';
+        option.style.margin = '5px';
+        option.style.backgroundColor = 'white';
+        option.style.border = '1px solid var(--border-color)';
+        option.style.borderRadius = '8px';
+        option.style.display = 'inline-block';
+        option.style.textAlign = 'center';
+        option.style.cursor = 'pointer';
+        option.style.width = '80px';
         
-        // Create image element with fallback
-        const img = document.createElement('img');
-        img.alt = product.name;
-        img.style.width = '60px';
-        img.style.height = '60px';
-        img.style.objectFit = 'contain';
+        // Try to load image with fallback
+        const imgContainer = document.createElement('div');
+        imgContainer.style.width = '60px';
+        imgContainer.style.height = '60px';
+        imgContainer.style.margin = '0 auto';
+        imgContainer.style.position = 'relative';
         
-        // Handle image loading with fallback
-        img.onerror = function() {
-            // If image fails to load, create a fallback
-            this.style.display = 'none';
+        try {
+            const img = document.createElement('img');
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'contain';
             
-            // Basic fallback for product display
+            img.onerror = function() {
+                this.style.display = 'none';
+                // Create fallback shape based on product type
+                const fallback = document.createElement('div');
+                fallback.style.width = '100%';
+                fallback.style.height = '100%';
+                fallback.style.backgroundColor = 'white';
+                fallback.style.border = '1px solid var(--text-color)';
+                fallback.style.borderRadius = '4px';
+                fallback.style.display = 'flex';
+                fallback.style.justifyContent = 'center';
+                fallback.style.alignItems = 'center';
+                fallback.textContent = product.id.charAt(0).toUpperCase();
+                imgContainer.appendChild(fallback);
+            };
+            
+            img.src = product.image;
+            imgContainer.appendChild(img);
+        } catch (e) {
+            console.error("Error creating product image:", e);
             const fallback = document.createElement('div');
-            fallback.style.width = '60px';
-            fallback.style.height = '60px';
+            fallback.style.width = '100%';
+            fallback.style.height = '100%';
             fallback.style.backgroundColor = 'white';
-            fallback.style.border = '2px solid var(--text-color)';
+            fallback.style.border = '1px solid var(--text-color)';
             fallback.style.borderRadius = '4px';
             fallback.style.display = 'flex';
             fallback.style.justifyContent = 'center';
             fallback.style.alignItems = 'center';
-            fallback.textContent = product.name;
-            option.appendChild(fallback);
-        };
-        
-        img.src = product.image;
+            fallback.textContent = product.id.charAt(0).toUpperCase();
+            imgContainer.appendChild(fallback);
+        }
         
         // Create name element
         const name = document.createElement('div');
-        name.className = 'product-name';
         name.textContent = product.name;
+        name.style.marginTop = '5px';
+        name.style.fontSize = '14px';
         
-        option.appendChild(img);
+        option.appendChild(imgContainer);
         option.appendChild(name);
         
         option.addEventListener('click', () => {
@@ -268,9 +344,11 @@ function selectProduct(productId) {
     // Update UI
     document.querySelectorAll('.product-option').forEach(option => {
         if (option.dataset.product === productId) {
-            option.classList.add('active');
+            option.style.backgroundColor = 'var(--button-hover)';
+            option.style.transform = 'translateY(-2px)';
         } else {
-            option.classList.remove('active');
+            option.style.backgroundColor = 'white';
+            option.style.transform = 'none';
         }
     });
     
@@ -282,45 +360,124 @@ function updateProductPreview() {
     if (!painter.selectedProduct || !painter.artDataUrl) return;
     
     const previewEl = document.getElementById('productPreview');
+    if (!previewEl) {
+        console.error("Product preview container not found!");
+        return;
+    }
+    
     previewEl.innerHTML = '';
     
-    // Create container for proper positioning
+    // Create container with relative positioning
     const container = document.createElement('div');
     container.style.position = 'relative';
     container.style.width = '100%';
     container.style.height = '100%';
+    container.style.display = 'flex';
+    container.style.justifyContent = 'center';
+    container.style.alignItems = 'center';
     
-    // Create product base image
-    const baseImg = document.createElement('img');
-    baseImg.className = 'product-base';
-    baseImg.src = painter.selectedProduct.image;
-    baseImg.style.width = '100%';
-    baseImg.style.height = '100%';
-    baseImg.style.objectFit = 'contain';
-    
-    // Create art overlay
-    const artImg = document.createElement('img');
-    artImg.className = 'product-art';
-    artImg.src = painter.artDataUrl;
-    artImg.style.position = 'absolute';
-    artImg.style.top = '0';
-    artImg.style.left = '0';
-    artImg.style.width = '100%';
-    artImg.style.height = '100%';
-    artImg.style.mixBlendMode = 'multiply';
-    
-    // Apply positioning from template
-    const pos = painter.selectedProduct.artPosition;
-    artImg.style.top = `${pos.y}px`;
-    artImg.style.left = `${pos.x}px`;
-    artImg.style.width = `${pos.width}px`;
-    artImg.style.height = `${pos.height}px`;
-    if (pos.rotation) {
-        artImg.style.transform = `rotate(${pos.rotation}deg)`;
+    try {
+        // Base product image or fallback
+        const baseImg = document.createElement('img');
+        baseImg.style.maxWidth = '80%';
+        baseImg.style.maxHeight = '80%';
+        baseImg.style.objectFit = 'contain';
+        
+        baseImg.onerror = function() {
+            this.style.display = 'none';
+            
+            // Create fallback shape
+            const fallback = document.createElement('div');
+            fallback.style.width = '80%';
+            fallback.style.height = '80%';
+            fallback.style.backgroundColor = 'white';
+            fallback.style.border = '1px solid var(--text-color)';
+            fallback.style.borderRadius = '4px';
+            fallback.style.display = 'flex';
+            fallback.style.justifyContent = 'center';
+            fallback.style.alignItems = 'center';
+            fallback.textContent = painter.selectedProduct.name;
+            container.appendChild(fallback);
+        };
+        
+        baseImg.src = painter.selectedProduct.image;
+        container.appendChild(baseImg);
+        
+        // Art overlay with percentage-based positioning
+        const artContainer = document.createElement('div');
+        artContainer.style.position = 'absolute';
+        artContainer.style.zIndex = '1';
+        
+        // Get position from template or use default
+        let overlayStyle = {};
+        
+        switch(painter.selectedProduct.id) {
+            case 'mug':
+                overlayStyle = {
+                    top: '20%',
+                    left: '35%',
+                    width: '40%',
+                    height: '40%'
+                };
+                break;
+            case 'tote':
+                overlayStyle = {
+                    top: '25%',
+                    left: '30%',
+                    width: '40%',
+                    height: '40%'
+                };
+                break;
+            case 'shirt':
+                overlayStyle = {
+                    top: '25%',
+                    left: '35%',
+                    width: '30%',
+                    height: '30%'
+                };
+                break;
+            case 'poster':
+                overlayStyle = {
+                    top: '10%',
+                    left: '15%',
+                    width: '70%',
+                    height: '70%'
+                };
+                break;
+            default:
+                overlayStyle = {
+                    top: '25%',
+                    left: '25%',
+                    width: '50%',
+                    height: '50%'
+                };
+        }
+        
+        // Apply positioning
+        artContainer.style.top = overlayStyle.top;
+        artContainer.style.left = overlayStyle.left;
+        artContainer.style.width = overlayStyle.width;
+        artContainer.style.height = overlayStyle.height;
+        
+        // Create art image
+        const artImg = document.createElement('img');
+        artImg.src = painter.artDataUrl;
+        artImg.style.width = '100%';
+        artImg.style.height = '100%';
+        artImg.style.objectFit = 'contain';
+        artImg.style.mixBlendMode = 'multiply';
+        
+        artContainer.appendChild(artImg);
+        container.appendChild(artContainer);
+    } catch (e) {
+        console.error("Error creating product preview:", e);
+        const errorMsg = document.createElement('div');
+        errorMsg.textContent = "Preview unavailable";
+        errorMsg.style.padding = '20px';
+        errorMsg.style.color = 'var(--text-color)';
+        container.appendChild(errorMsg);
     }
     
-    container.appendChild(baseImg);
-    container.appendChild(artImg);
     previewEl.appendChild(container);
 }
 
@@ -337,7 +494,10 @@ function updateToolButtons() {
         btn.classList.remove('active');
     });
     
-    document.getElementById(`${painter.tool}Tool`).classList.add('active');
+    const activeToolBtn = document.getElementById(`${painter.tool}Tool`);
+    if (activeToolBtn) {
+        activeToolBtn.classList.add('active');
+    }
     
     // Update brush size buttons
     document.querySelectorAll('.brush-size').forEach(btn => {
@@ -375,15 +535,18 @@ function createProduct() {
     
     // Show created product
     showCreatedProduct(newProduct);
-    
-    // No need to clear canvas immediately, let the user see what they created
-    // Only clear after they confirm
 }
 
-// Show the created product in a modalfunction showCreatedProduct(product) {
+// Show the created product in a modal
+function showCreatedProduct(product) {
     console.log("Showing product with art:", product);
     
     const displayEl = document.getElementById('createdProductDisplay');
+    if (!displayEl) {
+        console.error("Product display container not found!");
+        return;
+    }
+    
     displayEl.innerHTML = '';
     
     // ============= PRODUCT DISPLAY =============
@@ -401,6 +564,24 @@ function createProduct() {
     baseImg.style.width = '100%';
     baseImg.style.height = 'auto';
     baseImg.style.display = 'block';
+    
+    // Handle image error
+    baseImg.onerror = function() {
+        this.style.display = 'none';
+        
+        // Create fallback shape
+        const fallback = document.createElement('div');
+        fallback.style.width = '100%';
+        fallback.style.height = '200px';
+        fallback.style.backgroundColor = 'white';
+        fallback.style.border = '1px solid var(--text-color)';
+        fallback.style.borderRadius = '4px';
+        fallback.style.display = 'flex';
+        fallback.style.justifyContent = 'center';
+        fallback.style.alignItems = 'center';
+        fallback.textContent = product.name;
+        productContainer.appendChild(fallback);
+    };
     
     // Get product template
     const template = getProductTemplate(product.templateId);
@@ -523,23 +704,28 @@ function createProduct() {
     
     // Show the modal
     const modal = document.getElementById('productCreatedModal');
-    modal.classList.add('active');
+    if (modal) {
+        modal.classList.add('active');
+    }
     
     // Handle the close button - reset canvas only after confirmation
     const closeBtn = document.getElementById('closeProductModal');
-    // Remove existing event listeners
-    const newCloseBtn = closeBtn.cloneNode(true);
-    closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
-    
-    newCloseBtn.addEventListener('click', function() {
-        modal.classList.remove('active');
-        resetCanvas(); // Clear canvas for next creation
-    });
+    if (closeBtn) {
+        // Remove existing event listeners
+        const newCloseBtn = closeBtn.cloneNode(true);
+        closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+        
+        newCloseBtn.addEventListener('click', function() {
+            modal.classList.remove('active');
+            resetCanvas(); // Clear canvas for next creation
+        });
+    }
 }
-
 
 // Flood fill algorithm
 function floodFill(x, y, fillColor) {
+    if (!painter.ctx) return;
+    
     // Get canvas data
     const imageData = painter.ctx.getImageData(0, 0, painter.canvas.width, painter.canvas.height);
     const data = imageData.data;
@@ -657,4 +843,32 @@ window.debugArtPosition = function() {
     const previewEl = document.getElementById('productPreview');
     previewEl.appendChild(testOverlay);
     
-    return "Debug overlay
+    return "Debug overlay added - red box shows art position";
+};
+
+// Emergency fix function that can be called to restore functionality
+window.emergencyFixPainter = function() {
+    console.log("Running emergency painter fix...");
+    
+    // Reinitialize everything
+    initializePainter();
+    
+    // Extra fixes for product options
+    const productSelector = document.querySelector('.product-selector');
+    if (productSelector && (!productSelector.children.length || productSelector.children.length < 2)) {
+        createProductOptions();
+        
+        // Select first product
+        if (productTemplates && productTemplates.length > 0) {
+            selectProduct(productTemplates[0].id);
+        }
+    }
+    
+    // Fix color picker
+    const colorPicker = document.querySelector('.color-picker');
+    if (colorPicker && (!colorPicker.children.length || colorPicker.children.length < 2)) {
+        createColorPalette();
+    }
+    
+    return "Emergency fix applied!";
+};
