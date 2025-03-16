@@ -19,6 +19,14 @@
     /* Game Elements */
     --shop-floor: #fff5f7;
     --shop-wall: #ffcfd9;
+
+      /* Animation Variables */
+    --transition-fast: 0.2s;
+    --transition-normal: 0.3s;
+    
+    /* Size Variables */
+    --header-height: 60px;
+    --nav-height: 60px;
 }
 
 /* Theme Variations */
@@ -59,7 +67,13 @@
 
 html, body {
     height: 100%;
+    width: 100%;
     overflow: hidden;
+    position: fixed;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
 }
 
 body {
@@ -378,5 +392,13 @@ button.active {
     .inventory-grid {
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
         gap: 0.75rem;
+    }
+}
+
+/* iOS PWA support */
+@supports (-webkit-touch-callout: none) {
+    body {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: calc(env(safe-area-inset-bottom) + var(--nav-height));
     }
 }
