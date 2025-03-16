@@ -142,6 +142,55 @@ function renderInventory() {
     });
 }
 
+// Get standardized art positioning based on product type
+function getArtPosition(productId) {
+    // Default positioning
+    let position = {
+        top: '25%',
+        left: '25%',
+        width: '50%',
+        height: '50%'
+    };
+    
+    // Product-specific positioning
+    switch(productId) {
+        case 'mug':
+            position = {
+                top: '30%',
+                left: '30%',
+                width: '40%',
+                height: '40%'
+            };
+            break;
+        case 'tote':
+            position = {
+                top: '25%',
+                left: '25%',
+                width: '50%',
+                height: '50%'
+            };
+            break;
+        case 'shirt':
+            position = {
+                top: '25%',
+                left: '35%',
+                width: '30%',
+                height: '30%'
+            };
+            break;
+        case 'poster':
+            position = {
+                top: '15%',
+                left: '15%',
+                width: '70%',
+                height: '70%'
+            };
+            break;
+    }
+    
+    return position;
+}
+
 // Show the display spot selection for a product
 function showDisplaySelection(productId) {
     // Do not allow during shop hours
