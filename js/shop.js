@@ -82,9 +82,14 @@ function renderShopDisplays() {
                 const coinImg = document.createElement('img');
                 coinImg.src = 'images/ui/coin.png';
                 coinImg.alt = 'coins';
-                coinImg.onerror = function() {
-                    this.outerHTML = '<span style="font-size: 1.2rem;">🪙</span>';
-                };
+                img.onerror = function() {
+    // Try alternate image path or do nothing
+    this.src = 'images/ui/coin-alt.png'; // Try an alternate path
+    // Or just hide the image if it fails
+    this.onerror = function() {
+        this.style.display = 'none';
+    };
+};
                 
                 const priceText = document.createElement('span');
                 priceText.textContent = product.price;
@@ -473,18 +478,52 @@ function createCustomerElement(customer) {
     avatar.className = 'customer-avatar';
     
     // Use actual image or emoji based on customer type
-    if (customer.avatar && customer.avatar.startsWith('images/')) {
-        const avatarImg = document.createElement('img');
-        avatarImg.src = customer.avatar;
-        avatarImg.alt = customer.type;
-        avatarImg.onerror = function() {
+   if (customer.avatar && customer.avatar.startsWith('images/')) {
+    const avatarImg = document.createElement('img');
+    avatarImg.src = customer.avatar;
+    avatarImg.alt = customer.type;
+    avatarImg.onerror = function() {
+        this.src = 'images/customers/default.png'; // Try default image
+        this.onerror = function() {
             this.style.display = 'none';
-            avatar.textContent = '👤'; // Fallback emoji
+            // Create a colored circle instead of an emoji
+            const circle = document.createElement('div');
+            circle.style.width = '100%';
+            circle.style.height = '100%';
+            circle.style.backgroundColor = getRandomColor(); // Define this function or use a fixed color
+            circle.style.borderRadius = '50%';
+            avatar.appendChild(circle);
         };
-        avatar.appendChild(avatarImg);
-    } else {
-        avatar.textContent = customer.avatar || '👤';
-    }
+    };
+    avatar.appendChild(avatarImg);
+} else if (typeof customer.avatar === 'string') {
+    // If it's text but not a path, use first letter
+    const initial = document.createElement('div');
+    initial.textContent = customer.avatar.charAt(0).toUpperCase();
+    initial.style.display = 'flex';
+    initial.style.justifyContent = 'center';
+    initial.style.alignItems = 'center';
+    initial.style.width = '100%';
+    initial.style.height = '100%';
+    initial.style.fontSize = '24px';
+    initial.style.fontWeight = 'bold';
+    avatar.appendChild(initial);
+} else {
+    // Default avatar (colored circle with C for customer)
+    const defaultAvatar = document.createElement('div');
+    defaultAvatar.textContent = 'C';
+    defaultAvatar.style.backgroundColor = '#ffb8c6';
+    defaultAvatar.style.color = 'white';
+    defaultAvatar.style.display = 'flex';
+    defaultAvatar.style.justifyContent = 'center';
+    defaultAvatar.style.alignItems = 'center';
+    defaultAvatar.style.width = '100%';
+    defaultAvatar.style.height = '100%';
+    defaultAvatar.style.fontSize = '24px';
+    defaultAvatar.style.fontWeight = 'bold';
+    defaultAvatar.style.borderRadius = '50%';
+    avatar.appendChild(defaultAvatar);
+}
     
     const thoughts = document.createElement('div');
     thoughts.className = 'customer-thoughts';
