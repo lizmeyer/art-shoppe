@@ -89,7 +89,7 @@ function setupPainterEvents() {
     document.querySelectorAll('.brush-size').forEach(btn => {
         btn.addEventListener('click', () => {
             painter.brushSize = parseInt(btn.dataset.size);
-            updateToolButtons();
+            ToolButtons();
         });
     });
     
@@ -145,7 +145,7 @@ function startDrawingAt(x, y) {
     if (painter.tool === 'fill') {
         floodFill(Math.floor(x), Math.floor(y), painter.color);
         painter.isDrawing = false;
-        updateArtDataUrl();
+        ArtDataUrl();
     }
 }
 
@@ -183,20 +183,20 @@ function drawTo(x, y) {
     painter.lastX = x;
     painter.lastY = y;
     
-    // Update the data URL periodically
-    if (Math.random() < 0.1) { // Only update 10% of the time for performance
-        updateArtDataUrl();
+    //  the data URL periodically
+    if (Math.random() < 0.1) { // Only  10% of the time for performance
+        ArtDataUrl();
     }
 }
 
 // Stop drawing
 function stopDrawing() {
     painter.isDrawing = false;
-    updateArtDataUrl();
+    ArtDataUrl();
 }
 
-// Update the art data URL for preview
-function updateArtDataUrl() {
+//  the art data URL for preview
+function ArtDataUrl() {
     if (!painter.canvas) return;
     
     painter.artDataUrl = painter.canvas.toDataURL('image/png');
@@ -356,6 +356,7 @@ function selectProduct(productId) {
 }
 
 // Update the product preview with current art
+// Update the product preview with current art
 function updateProductPreview() {
     if (!painter.selectedProduct || !painter.artDataUrl) return;
     
@@ -376,109 +377,92 @@ function updateProductPreview() {
     container.style.justifyContent = 'center';
     container.style.alignItems = 'center';
     
-    try {
-        // Base product image or fallback
-        const baseImg = document.createElement('img');
-        baseImg.style.maxWidth = '80%';
-        baseImg.style.maxHeight = '80%';
-        baseImg.style.objectFit = 'contain';
-        
-        baseImg.onerror = function() {
-            this.style.display = 'none';
-            
-            // Create fallback shape
-            const fallback = document.createElement('div');
-            fallback.style.width = '80%';
-            fallback.style.height = '80%';
-            fallback.style.backgroundColor = 'white';
-            fallback.style.border = '1px solid var(--text-color)';
-            fallback.style.borderRadius = '4px';
-            fallback.style.display = 'flex';
-            fallback.style.justifyContent = 'center';
-            fallback.style.alignItems = 'center';
-            fallback.textContent = painter.selectedProduct.name;
-            container.appendChild(fallback);
-        };
-        
-        baseImg.src = painter.selectedProduct.image;
-        container.appendChild(baseImg);
-        
-        // Art overlay with percentage-based positioning
-        const artContainer = document.createElement('div');
-        artContainer.style.position = 'absolute';
-        artContainer.style.zIndex = '1';
-        
-        // Get position from template or use default
-        let overlayStyle = {};
-        
-        switch(painter.selectedProduct.id) {
-            case 'mug':
-                overlayStyle = {
-                    top: '20%',
-                    left: '35%',
-                    width: '40%',
-                    height: '40%'
-                };
-                break;
-            case 'tote':
-                overlayStyle = {
-                    top: '25%',
-                    left: '30%',
-                    width: '40%',
-                    height: '40%'
-                };
-                break;
-            case 'shirt':
-                overlayStyle = {
-                    top: '25%',
-                    left: '35%',
-                    width: '30%',
-                    height: '30%'
-                };
-                break;
-            case 'poster':
-                overlayStyle = {
-                    top: '10%',
-                    left: '15%',
-                    width: '70%',
-                    height: '70%'
-                };
-                break;
-            default:
-                overlayStyle = {
-                    top: '25%',
-                    left: '25%',
-                    width: '50%',
-                    height: '50%'
-                };
-        }
-        
-        // Apply positioning
-        artContainer.style.top = overlayStyle.top;
-        artContainer.style.left = overlayStyle.left;
-        artContainer.style.width = overlayStyle.width;
-        artContainer.style.height = overlayStyle.height;
-        
-        // Create art image
-        const artImg = document.createElement('img');
-        artImg.src = painter.artDataUrl;
-        artImg.style.width = '100%';
-        artImg.style.height = '100%';
-        artImg.style.objectFit = 'contain';
-        artImg.style.mixBlendMode = 'multiply';
-        
-        artContainer.appendChild(artImg);
-        container.appendChild(artContainer);
-    } catch (e) {
-        console.error("Error creating product preview:", e);
-        const errorMsg = document.createElement('div');
-        errorMsg.textContent = "Preview unavailable";
-        errorMsg.style.padding = '20px';
-        errorMsg.style.color = 'var(--text-color)';
-        container.appendChild(errorMsg);
+    // Base product image
+    const baseImg = document.createElement('img');
+    baseImg.src = painter.selectedProduct.image;
+    baseImg.alt = painter.selectedProduct.name;
+    baseImg.style.maxWidth = '90%';
+    baseImg.style.maxHeight = '90%';
+    baseImg.style.objectFit = 'contain';
+    baseImg.style.position = 'relative'; // Changed from absolute
+    baseImg.style.zIndex = '1';
+    
+    // Create a wrapper for both images
+    const productWithArtWrapper = document.createElement('div');
+    productWithArtWrapper.style.position = 'relative';
+    productWithArtWrapper.style.display = 'inline-block';
+    
+    // Art overlay
+    const artImg = document.createElement('img');
+    artImg.src = painter.artDataUrl;
+    artImg.alt = "Your Design";
+    artImg.style.position = 'absolute';
+    artImg.style.mixBlendMode = 'multiply';
+    artImg.style.zIndex = '2';
+    
+    // Determine overlay positioning based on product type
+    let overlayStyle = {};
+    
+    switch(painter.selectedProduct.id) {
+        case 'mug':
+            overlayStyle = {
+                top: '20%',
+                left: '35%',
+                width: '40%',
+                height: '40%'
+            };
+            break;
+        case 'tote':
+            overlayStyle = {
+                top: '25%',
+                left: '30%',
+                width: '40%',
+                height: '40%'
+            };
+            break;
+        case 'shirt':
+            overlayStyle = {
+                top: '25%',
+                left: '35%',
+                width: '30%',
+                height: '30%'
+            };
+            break;
+        case 'poster':
+            overlayStyle = {
+                top: '10%',
+                left: '15%',
+                width: '70%',
+                height: '70%'
+            };
+            break;
+        default:
+            overlayStyle = {
+                top: '25%',
+                left: '25%',
+                width: '50%',
+                height: '50%'
+            };
     }
     
+    // Apply positioning
+    artImg.style.top = overlayStyle.top;
+    artImg.style.left = overlayStyle.left;
+    artImg.style.width = overlayStyle.width;
+    artImg.style.height = overlayStyle.height;
+    
+    // Add elements to container
+    productWithArtWrapper.appendChild(baseImg);
+    productWithArtWrapper.appendChild(artImg);
+    container.appendChild(productWithArtWrapper);
     previewEl.appendChild(container);
+    
+    // Log for debugging
+    console.log("Updated product preview with:", {
+        product: painter.selectedProduct.name,
+        artUrl: painter.artDataUrl.substring(0, 50) + "...",
+        positioning: overlayStyle
+    });
 }
 
 // Set the active drawing tool
