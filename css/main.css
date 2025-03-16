@@ -131,6 +131,32 @@ button.active {
     height: 1.5rem;
 }
 
+/* Fallback for coin icon */
+.coin-fallback {
+    font-size: 1.2rem;
+    display: inline-block;
+}
+
+/* Fallback for loading image */
+.loading-image-fallback {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    animation: float 3s infinite ease-in-out;
+}
+
+/* Product fallbacks */
+.product-fallback {
+    width: 100%;
+    height: 100%;
+    border: 2px solid var(--text-color);
+    border-radius: var(--border-radius);
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
 .menu-button {
     font-size: 1.5rem;
     cursor: pointer;
