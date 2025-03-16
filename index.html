@@ -4,11 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="description" content="Cozy Artist Shop - Create art and sell products with your designs!">
-    <meta name="mobile-web-app-capable" content="yes">
-
-    <title>Cozy Artist Shop</title>
+    <title>Art Shoppe</title>
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
@@ -17,20 +16,12 @@
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/painter.css">
-    
-    <!-- Apple touch icon for iOS -->
-    <link rel="apple-touch-icon" href="images/ui/app-icon.png">
-    
-    <!-- Preload critical assets -->
-    <link rel="preload" href="images/shop/background.png" as="image">
-    <link rel="preload" href="images/ui/paint-brush.png" as="image">
-    
 </head>
 <body data-theme="pastel">
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-content">
-            <img src="images/ui/paint-brush.png" alt="Paint Brush" class="loading-image">
+            <span class="loading-image-fallback">🖌️</span>
             <h2>Loading Cozy Artist Shop...</h2>
             <p>Setting up your shop!</p>
             <div class="loading-bar-container">
@@ -44,7 +35,7 @@
         <!-- Top Bar with Stats -->
         <div class="top-bar">
             <div class="coins">
-                <img src="images/ui/coin.png" alt="Coins">
+                <span class="coin-fallback">🪙</span>
                 <span id="coinCount">100</span>
             </div>
             <div class="day-counter">Day <span id="dayCount">1</span></div>
@@ -55,15 +46,15 @@
         <div class="game-area">
             <!-- Tab Navigation -->
             <div class="tab-navigation">
-                <button class="tab-button active" data-tab="shop">Shop</button>
-                <button class="tab-button" data-tab="studio">Art Studio</button>
+                <button class="tab-button" data-tab="shop">Shop</button>
+                <button class="tab-button active" data-tab="studio">Art Studio</button>
                 <button class="tab-button" data-tab="inventory">Inventory</button>
             </div>
             
             <!-- Tab Content -->
             <div class="tab-content">
                 <!-- Shop Tab -->
-                <div class="tab-pane active" id="shopTab">
+                <div class="tab-pane" id="shopTab">
                     <div class="shop-scene">
                         <!-- Shop displays will go here -->
                         <div class="shop-displays" id="shopDisplays"></div>
@@ -74,7 +65,7 @@
                 </div>
                 
                 <!-- Studio Tab -->
-                <div class="tab-pane" id="studioTab">
+                <div class="tab-pane active" id="studioTab">
                     <div class="studio-container">
                         <!-- Canvas Area -->
                         <div class="canvas-container">
@@ -136,20 +127,17 @@
     </div>
     
     <div class="modal" id="productCreatedModal">
-    <div class="modal-content">
-        <h2>Product Created!</h2>
-        
-        <!-- Main product display -->
-        <div class="created-product" id="createdProductDisplay"></div>
-        
-        <!-- Extra messaging -->
-        <p>Your creation has been added to your inventory.</p>
-        
-        <!-- Action button -->
-        <button id="closeProductModal" class="accent-button">Ok</button>
+        <div class="modal-content product-created-modal">
+            <h2>Product Created!</h2>
+            
+            <div class="created-product" id="createdProductDisplay">
+                <!-- JavaScript will populate this container -->
+            </div>
+            
+            <p>Your creation has been added to your inventory.</p>
+            <button id="closeProductModal" class="accent-button">Ok</button>
+        </div>
     </div>
-</div>
-
     
     <div class="notification" id="notification">
         <p id="notificationText"></p>
@@ -162,6 +150,7 @@
     <script src="js/shop.js"></script>
     <script src="js/inventory.js"></script>
     <script src="js/customers.js"></script>
+    <script src="js/fallbackImages.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
