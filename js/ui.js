@@ -28,7 +28,10 @@ function showNotification(message, duration = 3000) {
 }
 
 // Switch between tabs
+// Switch between tabs
 function switchTab(tabName) {
+    console.log("Switching to tab:", tabName);
+    
     // Update tab buttons
     document.querySelectorAll('.tab-button').forEach(btn => {
         btn.classList.remove('active');
@@ -42,7 +45,18 @@ function switchTab(tabName) {
         pane.classList.remove('active');
     });
     
-    document.getElementById(`${tabName}Tab`).classList.add('active');
+    const targetTab = document.getElementById(`${tabName}Tab`);
+    if (targetTab) {
+        targetTab.classList.add('active');
+        
+        // Refresh content when switching to inventory
+        if (tabName === 'inventory' && typeof renderInventory === 'function') {
+            console.log("Refreshing inventory display");
+            renderInventory();
+        }
+    } else {
+        console.error(`Tab "${tabName}Tab" not found!`);
+    }
 }
 
 // Set up UI event listeners
