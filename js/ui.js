@@ -4,6 +4,9 @@
  */
 
 const UI = {
+    // Store DOM element references
+    elements: {},
+    
     // Tutorial steps
     tutorialSteps: [
         {
@@ -39,8 +42,17 @@ const UI = {
      */
     init() {
         try {
-            // Set up event listeners
+            // Cache DOM elements
+            this.cacheElements();
+            
+            // Add responsive meta tag if not present
+            this.ensureResponsiveMeta();
+            
+            // Set up main event listeners
             this.setupEventListeners();
+            
+            // Add responsive styling
+            this.addResponsiveStyles();
             
             // Show loading screen
             this.showLoading();
@@ -50,24 +62,446 @@ const UI = {
             this.updateDayDisplay();
             this.updateTheme();
             
+            console.log('UI initialized successfully');
             return true;
         } catch (error) {
             console.error('Failed to initialize UI:', error);
-            Utils.showError('Failed to initialize UI: ' + error.message);
+            this.showError('Failed to initialize UI: ' + error.message);
             return false;
         }
     },
     
     /**
-     * Show loading screen with progress
+     * Cache DOM elements for better performance
+     */
+    cacheElements() {
+        // Main containers
+        this.elements.body = document.body;
+        this.elements.gameContainer = document.getElementById('gameContainer');
+        this.elements.loadingScreen = document.getElementById('loadingScreen');
+        this.elements.errorScreen = document.getElementById('errorScreen');
+        this.elements.shopView = document.getElementById('shopView');
+        this.elements.studioView = document.getElementById('studioView');
+        this.elements.inventoryView = document.getElementById('inventoryView');
+        this.elements.settingsView = document.getElementById('settingsView');
+        
+        // Header elements
+        this.elements.coinDisplay = document.getElementById('coinDisplay');
+        this.elements.dayDisplay = document.getElementById('dayDisplay');
+        this.elements.menuButton = document.getElementById('menuButton');
+        
+        // Navigation
+        this.elements.navButtons = document.querySelectorAll('.nav-button');
+        
+        // Studio elements
+        this.elements.productSelector = document.getElementById('productSelector');
+        this.elements.canvas = document.getElementById('drawingCanvas') || document.querySelector('canvas');
+        this.elements.colorPalette = document.getElementById('colorPalette') || document.querySelector('.colors');
+        this.elements.brushSize = document.getElementById('brushSize');
+        this.elements.clearButton = document.getElementById('clearButton');
+        this.elements.createProductButton = document.getElementById('createProductButton');
+        
+        // Shop elements
+        this.elements.shopDisplays = document.getElementById('shopDisplays');
+        this.elements.customerArea = document.getElementById('customerArea');
+        
+        // Inventory elements
+        this.elements.inventoryItems = document.getElementById('inventoryItems');
+        
+        // Action buttons
+        this.elements.nextDayButton = document.getElementById('nextDayButton');
+    },
+    
+    /**
+     * Ensure meta viewport tag exists for responsiveness
+     */
+    ensureResponsiveMeta() {
+        if (!document.querySelector('meta[name="viewport"]')) {
+            const meta = document.createElement('meta');
+            meta.name = 'viewport';
+            meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+            document.head.appendChild(meta);
+            console.log('Added responsive viewport meta tag');
+        }
+    },
+    
+    /**
+     * Add responsive styles to document
+     */
+    addResponsiveStyles() {
+        const styleId = 'responsive-styles';
+        if (document.getElementById(styleId)) return;
+        
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+            /* Base responsive improvements */
+            body {
+                margin: 0;
+                padding: 0;
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+            }
+            
+            /* Header styling */
+            .game-header {
+                position: sticky;
+                top: 0;
+                z-index: 10;
+            }
+            
+            /* View containers */
+            .game-view {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 15px;
+                flex: 1;
+                max-width: 900px;
+                margin: 0 auto;
+                width: 100%;
+            }
+            
+            /* Art Studio specific styles */
+            #studioView h2, #studioView .view-title {
+                text-align: center;
+                margin-bottom: 20px;
+                color: #5a4a4c;
+            }
+            
+            .product-selection {
+                margin-bottom: 20px;
+                width: 100%;
+                max-width: 500px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 15px;
+            }
+            
+            .product-selection select {
+                padding: 8px 15px;
+                border-radius: 5px;
+                border: 1px solid #ccc;
+                background-color: #f9f9f9;
+                font-size: 16px;
+                min-width: 150px;
+            }
+            
+            /* Canvas container */
+            .canvas-container {
+                width: 100%;
+                max-width: 600px;
+                aspect-ratio: 1;
+                margin: 0 auto 20px;
+                background-color: #fff;
+                border-radius: 10px;
+                box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+                overflow: hidden;
+                position: relative;
+            }
+            
+            canvas {
+                width: 100%;
+                height: 100%;
+                display: block;
+                cursor: crosshair;
+            }
+            
+            /* Color palette */
+            .colors {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+                margin: 20px 0;
+                width: 100%;
+                max-width: 500px;
+            }
+            
+            .color-swatch {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                cursor: pointer;
+                border: 2px solid transparent;
+                transition: transform 0.2s ease;
+            }
+            
+            .color-swatch.selected, .color-swatch:active {
+                transform: scale(1.15);
+                border-color: #fff;
+                box-shadow: 0 0 0 2px #888;
+            }
+            
+            /* Brush size control */
+            .brush-size {
+                width: 100%;
+                max-width: 400px;
+                margin: 20px auto;
+                text-align: center;
+            }
+            
+            .brush-size input[type="range"] {
+                width: 100%;
+                margin: 10px 0;
+            }
+            
+            /* Buttons row */
+            .action-buttons {
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                margin: 20px 0;
+                width: 100%;
+                max-width: 500px;
+            }
+            
+            /* Product modal improvements */
+            .product-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0,0,0,0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            }
+            
+            .product-modal-content {
+                background-color: #ffeef2;
+                border-radius: 15px;
+                padding: 25px;
+                max-width: 90%;
+                width: 500px;
+                position: relative;
+                box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+            }
+            
+            .product-preview {
+                position: relative;
+                width: 250px;
+                height: 250px;
+                margin: 0 auto 20px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            
+            .product-info {
+                text-align: center;
+                margin: 20px 0;
+            }
+            
+            .product-actions {
+                display: flex;
+                justify-content: space-between;
+                margin-top: 25px;
+            }
+            
+            /* Media queries */
+            @media (max-width: 768px) {
+                .canvas-container {
+                    max-width: 100%;
+                }
+                
+                .color-swatch {
+                    width: 35px;
+                    height: 35px;
+                }
+                
+                .shop-displays {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+                
+                .inventory-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+            
+            @media (max-width: 480px) {
+                .action-buttons {
+                    flex-direction: column;
+                    gap: 10px;
+                    align-items: center;
+                }
+                
+                button.action-button, button.nav-button {
+                    width: 80%;
+                }
+                
+                .color-swatch {
+                    width: 30px;
+                    height: 30px;
+                }
+            }
+        `;
+        
+        document.head.appendChild(style);
+        console.log('Added responsive styles');
+    },
+    
+    /**
+     * Set up event listeners
+     */
+    setupEventListeners() {
+        // Navigation buttons
+        if (this.elements.navButtons) {
+            this.elements.navButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const view = button.getAttribute('data-view');
+                    if (view) this.changeView(view);
+                });
+            });
+        }
+        
+        // Next day button
+        if (this.elements.nextDayButton) {
+            this.elements.nextDayButton.addEventListener('click', () => {
+                this.startNewDay();
+            });
+        }
+        
+        // Error retry button
+        const retryButton = document.getElementById('retryButton');
+        if (retryButton) {
+            retryButton.addEventListener('click', () => {
+                window.location.reload();
+            });
+        }
+        
+        // Create responsive art studio if on studio view
+        this.setupStudioView();
+    },
+    
+    /**
+     * Create or update the studio view layout
+     */
+    setupStudioView() {
+        if (!this.elements.studioView) return;
+        
+        // Check if the canvas container exists
+        let canvasContainer = this.elements.studioView.querySelector('.canvas-container');
+        if (!canvasContainer && this.elements.canvas) {
+            // Create canvas container
+            canvasContainer = document.createElement('div');
+            canvasContainer.className = 'canvas-container';
+            
+            // Move canvas into container
+            const canvas = this.elements.canvas;
+            if (canvas.parentNode) {
+                canvas.parentNode.replaceChild(canvasContainer, canvas);
+            }
+            canvasContainer.appendChild(canvas);
+            
+            this.elements.studioView.appendChild(canvasContainer);
+        }
+        
+        // Make sure we have a product selector
+        if (!this.elements.productSelector) {
+            const productSelection = document.createElement('div');
+            productSelection.className = 'product-selection';
+            productSelection.innerHTML = `
+                <label for="productSelector">Select Product:</label>
+                <select id="productSelector">
+                    <option value="mug">Mug</option>
+                    <option value="tote">Tote Bag</option>
+                    <option value="shirt">T-Shirt</option>
+                    <option value="poster">Poster</option>
+                </select>
+            `;
+            
+            if (this.elements.studioView.firstChild) {
+                this.elements.studioView.insertBefore(productSelection, this.elements.studioView.firstChild);
+            } else {
+                this.elements.studioView.appendChild(productSelection);
+            }
+            
+            this.elements.productSelector = productSelection.querySelector('select');
+        }
+        
+        // Ensure color palette is properly structured
+        if (this.elements.colorPalette) {
+            // Add title if needed
+            if (!this.elements.colorPalette.querySelector('h3')) {
+                const title = document.createElement('h3');
+                title.textContent = 'Colors';
+                this.elements.colorPalette.insertBefore(title, this.elements.colorPalette.firstChild);
+            }
+        }
+        
+        // Create brush size control if needed
+        let brushSizeControl = this.elements.studioView.querySelector('.brush-size');
+        if (!brushSizeControl) {
+            brushSizeControl = document.createElement('div');
+            brushSizeControl.className = 'brush-size';
+            brushSizeControl.innerHTML = `
+                <h3>Brush Size</h3>
+                <input type="range" id="brushSize" min="1" max="20" value="5">
+            `;
+            
+            if (this.elements.colorPalette) {
+                this.elements.studioView.insertBefore(brushSizeControl, this.elements.colorPalette.nextSibling);
+            } else {
+                this.elements.studioView.appendChild(brushSizeControl);
+            }
+            
+            this.elements.brushSize = brushSizeControl.querySelector('input');
+        }
+        
+        // Create action buttons if needed
+        let actionButtons = this.elements.studioView.querySelector('.action-buttons');
+        if (!actionButtons) {
+            actionButtons = document.createElement('div');
+            actionButtons.className = 'action-buttons';
+            
+            // Find existing buttons or create new ones
+            const clearButton = document.getElementById('clearButton') || 
+                Array.from(document.querySelectorAll('button')).find(b => b.textContent.trim() === 'Clear');
+            
+            const createButton = document.getElementById('createProductButton') || 
+                Array.from(document.querySelectorAll('button')).find(b => b.textContent.trim() === 'Create Product');
+            
+            if (!clearButton) {
+                const newClearButton = document.createElement('button');
+                newClearButton.id = 'clearButton';
+                newClearButton.className = 'clear-button';
+                newClearButton.textContent = 'Clear';
+                actionButtons.appendChild(newClearButton);
+                this.elements.clearButton = newClearButton;
+            } else {
+                clearButton.className = 'clear-button';
+                actionButtons.appendChild(clearButton);
+            }
+            
+            if (!createButton) {
+                const newCreateButton = document.createElement('button');
+                newCreateButton.id = 'createProductButton';
+                newCreateButton.className = 'create-button';
+                newCreateButton.textContent = 'Create Product';
+                actionButtons.appendChild(newCreateButton);
+                this.elements.createProductButton = newCreateButton;
+            } else {
+                createButton.className = 'create-button';
+                actionButtons.appendChild(createButton);
+            }
+            
+            this.elements.studioView.appendChild(actionButtons);
+        }
+    },
+    
+    /**
+     * Show loading screen
      */
     showLoading() {
-        const loadingScreen = document.getElementById('loadingScreen');
-        if (!loadingScreen) return;
+        if (!this.elements.loadingScreen) return;
         
-        loadingScreen.classList.remove('hidden');
+        this.elements.loadingScreen.classList.remove('hidden');
         
-        // Simulate loading progress
         let progress = 0;
         const loadingBar = document.getElementById('loadingBar');
         if (!loadingBar) return;
@@ -90,179 +524,79 @@ const UI = {
      * Hide loading screen
      */
     hideLoading() {
-        const loadingScreen = document.getElementById('loadingScreen');
-        if (loadingScreen) {
-            loadingScreen.classList.add('hidden');
+        if (this.elements.loadingScreen) {
+            this.elements.loadingScreen.classList.add('hidden');
         }
         
-        const gameContainer = document.getElementById('gameContainer');
-        if (gameContainer) {
-            gameContainer.classList.remove('hidden');
+        if (this.elements.gameContainer) {
+            this.elements.gameContainer.classList.remove('hidden');
         }
     },
     
     /**
-     * Setup all event listeners
+     * Show error screen
      */
-    setupEventListeners() {
-        // Navigation buttons
-        const navButtons = document.querySelectorAll('.nav-button');
-        navButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const view = button.getAttribute('data-view');
-                this.changeView(view);
-            });
-        });
+    showError(message) {
+        const errorScreen = document.getElementById('errorScreen');
+        const errorMessage = document.getElementById('errorMessage');
         
-        // Theme buttons
-        const themeButtons = document.querySelectorAll('.theme-button');
-        themeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const theme = button.getAttribute('data-theme');
-                this.changeTheme(theme);
-            });
-        });
-        
-        // Next day button
-        const nextDayButton = document.getElementById('nextDayButton');
-        if (nextDayButton) {
-            nextDayButton.addEventListener('click', () => {
-                this.startNewDay();
-            });
+        if (errorMessage) {
+            errorMessage.textContent = message;
         }
         
-        // Settings buttons
-        const saveGameButton = document.getElementById('saveGameButton');
-        if (saveGameButton) {
-            saveGameButton.addEventListener('click', () => {
-                if (gameState.saveGame()) {
-                    Utils.showNotification('Game saved!');
-                } else {
-                    Utils.showNotification('Failed to save game');
-                }
-            });
+        if (errorScreen) {
+            errorScreen.classList.remove('hidden');
         }
         
-        const resetGameButton = document.getElementById('resetGameButton');
-        if (resetGameButton) {
-            resetGameButton.addEventListener('click', () => {
-                Utils.createModal({
-                    title: 'Reset Game',
-                    content: 'Are you sure you want to reset the game? All progress will be lost.',
-                    buttons: [
-                        {
-                            text: 'Cancel',
-                            type: 'secondary-button',
-                            action: 'cancel'
-                        },
-                        {
-                            text: 'Reset Game',
-                            type: 'danger-button',
-                            action: 'reset',
-                            onClick: () => {
-                                if (gameState.resetGame()) {
-                                    Utils.showNotification('Game reset successfully');
-                                    this.updateAllUI();
-                                    
-                                    // Show tutorial again
-                                    this.showTutorial();
-                                } else {
-                                    Utils.showNotification('Failed to reset game');
-                                }
-                            }
-                        }
-                    ]
-                });
-            });
+        if (this.elements.gameContainer) {
+            this.elements.gameContainer.classList.add('hidden');
         }
         
-        const showTutorialButton = document.getElementById('showTutorialButton');
-        if (showTutorialButton) {
-            showTutorialButton.addEventListener('click', () => {
-                this.showTutorial();
-            });
+        if (this.elements.loadingScreen) {
+            this.elements.loadingScreen.classList.add('hidden');
         }
         
-        // Tutorial navigation
-        const tutorialNextButton = document.getElementById('tutorialNextButton');
-        if (tutorialNextButton) {
-            tutorialNextButton.addEventListener('click', () => {
-                this.showNextTutorialStep();
-            });
-        }
-        
-        const tutorialPrevButton = document.getElementById('tutorialPrevButton');
-        if (tutorialPrevButton) {
-            tutorialPrevButton.addEventListener('click', () => {
-                this.showPreviousTutorialStep();
-            });
-        }
-        
-        // Error screen retry button
-        const retryButton = document.getElementById('retryButton');
-        if (retryButton) {
-            retryButton.addEventListener('click', () => {
-                window.location.reload();
-            });
-        }
-        
-        // Volume sliders
-        const musicVolume = document.getElementById('musicVolume');
-        if (musicVolume) {
-            musicVolume.addEventListener('input', (e) => {
-                gameState.data.settings.musicVolume = parseInt(e.target.value);
-                gameState.saveGame();
-            });
-        }
-        
-        const sfxVolume = document.getElementById('sfxVolume');
-        if (sfxVolume) {
-            sfxVolume.addEventListener('input', (e) => {
-                gameState.data.settings.sfxVolume = parseInt(e.target.value);
-                gameState.saveGame();
-            });
-        }
+        console.error('Game Error:', message);
     },
     
     /**
      * Start the game after loading
      */
     startGame() {
-        // Show tutorial if it's first time
         if (!gameState.data.settings.tutorialComplete) {
             this.showTutorial();
         }
         
-        // Render initial UI
         this.renderShopDisplays();
         this.renderInventory();
         
         // Generate initial customers
-        Customers.generateInitialCustomers();
+        if (typeof Customers !== 'undefined' && typeof Customers.generateInitialCustomers === 'function') {
+            Customers.generateInitialCustomers();
+        }
         this.renderCustomers();
         
-        // Start animation loop
-        this.startAnimationLoop();
+        // Initialize canvas if in studio view
+        if (this.elements.studioView && !this.elements.studioView.classList.contains('hidden')) {
+            this.initializeCanvas();
+        }
     },
     
     /**
-     * Start animation loop for updating UI elements
+     * Initialize the canvas
      */
-    startAnimationLoop() {
-        const updateUI = () => {
-            // Update customer patience bars
-            Customers.updateCustomerPatience();
-            
-            // Request next frame
-            requestAnimationFrame(updateUI);
-        };
-        
-        // Start the loop
-        updateUI();
+    initializeCanvas() {
+        if (typeof Canvas !== 'undefined' && typeof Canvas.init === 'function') {
+            Canvas.init();
+        } else if (typeof CanvasPainter !== 'undefined' && typeof CanvasPainter.init === 'function') {
+            CanvasPainter.init();
+        } else {
+            console.warn('Canvas drawing system not found');
+        }
     },
     
     /**
-     * Show tutorial overlay
+     * Show tutorial
      */
     showTutorial() {
         const tutorialOverlay = document.getElementById('tutorialOverlay');
@@ -274,7 +608,7 @@ const UI = {
     },
     
     /**
-     * Update tutorial step content
+     * Update tutorial step
      */
     updateTutorialStep() {
         const step = this.tutorialSteps[this.currentTutorialStep];
@@ -286,90 +620,62 @@ const UI = {
         
         if (tutorialTitle) tutorialTitle.textContent = step.title;
         if (tutorialContent) tutorialContent.textContent = step.content;
-        if (tutorialProgress) tutorialProgress.textContent = `${this.currentTutorialStep + 1}/${this.tutorialSteps.length}`;
+        if (tutorialProgress) {
+            tutorialProgress.textContent = `${this.currentTutorialStep + 1}/${this.tutorialSteps.length}`;
+        }
         
-        // Toggle prev button visibility
+        // Show/hide previous button
         if (prevButton) {
-            if (this.currentTutorialStep > 0) {
-                prevButton.classList.remove('hidden');
-            } else {
-                prevButton.classList.add('hidden');
-            }
+            prevButton.classList.toggle('hidden', this.currentTutorialStep === 0);
         }
         
         // Update next button text
         if (nextButton) {
-            if (this.currentTutorialStep === this.tutorialSteps.length - 1) {
-                nextButton.textContent = 'Start Game';
-            } else {
-                nextButton.textContent = 'Next';
-            }
-        }
-    },
-    
-    /**
-     * Show next tutorial step
-     */
-    showNextTutorialStep() {
-        this.currentTutorialStep++;
-        
-        if (this.currentTutorialStep < this.tutorialSteps.length) {
-            this.updateTutorialStep();
-        } else {
-            // End tutorial
-            const tutorialOverlay = document.getElementById('tutorialOverlay');
-            if (tutorialOverlay) {
-                tutorialOverlay.classList.add('hidden');
-            }
-            
-            // Mark tutorial as completed
-            gameState.data.settings.tutorialComplete = true;
-            gameState.saveGame();
-        }
-    },
-    
-    /**
-     * Show previous tutorial step
-     */
-    showPreviousTutorialStep() {
-        if (this.currentTutorialStep > 0) {
-            this.currentTutorialStep--;
-            this.updateTutorialStep();
+            nextButton.textContent = this.currentTutorialStep === this.tutorialSteps.length - 1 ? 'Start Game' : 'Next';
         }
     },
     
     /**
      * Change active view
-     * @param {string} viewName - The view ID to show
      */
     changeView(viewName) {
-        // Update nav buttons
-        const navButtons = document.querySelectorAll('.nav-button');
-        navButtons.forEach(button => {
-            if (button.getAttribute('data-view') === viewName) {
-                button.classList.add('active');
-            } else {
-                button.classList.remove('active');
-            }
+        const views = ['shopView', 'studioView', 'inventoryView', 'settingsView'];
+        const viewElements = views.map(v => document.getElementById(v)).filter(Boolean);
+        
+        // Update navigation buttons
+        this.elements.navButtons.forEach(button => {
+            const targetView = button.getAttribute('data-view');
+            button.classList.toggle('active', targetView === viewName);
         });
         
-        // Update views
-        const views = document.querySelectorAll('.game-view');
-        views.forEach(view => {
-            if (view.id === viewName) {
-                view.classList.remove('hidden');
-            } else {
-                view.classList.add('hidden');
-            }
+        // Hide all views
+        viewElements.forEach(view => {
+            view.classList.add('hidden');
         });
         
-        // Update content for the view
+        // Show the selected view
+        const targetView = document.getElementById(viewName);
+        if (targetView) {
+            targetView.classList.remove('hidden');
+            
+            // Special handling for studio view
+            if (viewName === 'studioView') {
+                this.setupStudioView();
+                this.initializeCanvas();
+            }
+        }
+        
+        // Update game state
+        if (gameState) {
+            gameState.activeView = viewName;
+        }
+        
+        // Update view-specific content
         this.updateViewContent(viewName);
     },
     
-   /**
-     * Update content for a specific view
-     * @param {string} viewName - The view ID
+    /**
+     * Update view content
      */
     updateViewContent(viewName) {
         switch (viewName) {
@@ -378,8 +684,8 @@ const UI = {
                 this.renderCustomers();
                 break;
             case 'studioView':
-                Canvas.populateProductSelector();
-                Canvas.populateColorPalette();
+                // Setup canvas and controls
+                this.setupStudioView();
                 break;
             case 'inventoryView':
                 this.renderInventory();
@@ -391,7 +697,7 @@ const UI = {
     },
     
     /**
-     * Update settings UI elements with current values
+     * Update settings UI
      */
     updateSettingsUI() {
         const musicVolume = document.getElementById('musicVolume');
@@ -401,32 +707,29 @@ const UI = {
         if (musicVolume) musicVolume.value = gameState.data.settings.musicVolume;
         if (sfxVolume) sfxVolume.value = gameState.data.settings.sfxVolume;
         
-        themeButtons.forEach(button => {
-            if (button.getAttribute('data-theme') === gameState.data.settings.theme) {
-                button.classList.add('active');
-            } else {
-                button.classList.remove('active');
-            }
-        });
-    },
-    
-    /**
-     * Update the coin display
-     */
-    updateCoinDisplay() {
-        const coinDisplay = document.getElementById('coinDisplay');
-        if (coinDisplay) {
-            coinDisplay.textContent = Utils.formatNumber(gameState.data.coins);
+        if (themeButtons) {
+            themeButtons.forEach(button => {
+                button.classList.toggle('active', 
+                    button.getAttribute('data-theme') === gameState.data.settings.theme);
+            });
         }
     },
     
     /**
-     * Update the day display
+     * Update coin display
+     */
+    updateCoinDisplay() {
+        if (this.elements.coinDisplay) {
+            this.elements.coinDisplay.textContent = gameState.data.coins;
+        }
+    },
+    
+    /**
+     * Update day display
      */
     updateDayDisplay() {
-        const dayDisplay = document.getElementById('dayDisplay');
-        if (dayDisplay) {
-            dayDisplay.textContent = gameState.data.day;
+        if (this.elements.dayDisplay) {
+            this.elements.dayDisplay.textContent = gameState.data.day;
         }
     },
     
@@ -438,32 +741,24 @@ const UI = {
         
         const themeButtons = document.querySelectorAll('.theme-button');
         themeButtons.forEach(button => {
-            if (button.getAttribute('data-theme') === gameState.data.settings.theme) {
-                button.classList.add('active');
-            } else {
-                button.classList.remove('active');
-            }
+            button.classList.toggle('active', 
+                button.getAttribute('data-theme') === gameState.data.settings.theme);
         });
-    },
-    
-    /**
-     * Change theme
-     * @param {string} theme - The theme name
-     */
-    changeTheme(theme) {
-        gameState.data.settings.theme = theme;
-        this.updateTheme();
-        gameState.saveGame();
     },
     
     /**
      * Render shop displays
      */
     renderShopDisplays() {
-        const shopDisplays = document.getElementById('shopDisplays');
-        if (!shopDisplays) return;
+        if (!this.elements.shopDisplays) return;
         
-        shopDisplays.innerHTML = '';
+        this.elements.shopDisplays.innerHTML = '';
+        this.elements.shopDisplays.className = 'shop-displays';
+        
+        if (!gameState.data.shopDisplays || !gameState.data.shopDisplays.length) {
+            console.warn('No shop displays defined in gameState');
+            return;
+        }
         
         gameState.data.shopDisplays.forEach(display => {
             const displayElement = document.createElement('div');
@@ -483,11 +778,12 @@ const UI = {
                             <div class="product-image-container">
                                 <img src="${product.imageUrl}" alt="${product.name}" class="product-base-image">
                                 ${product.artUrl ? `<img src="${product.artUrl}" alt="Custom Art" class="product-art-image" style="
-                                    left: ${template.artPosition.x / 3}px;
-                                    top: ${template.artPosition.y / 3}px;
-                                    width: ${template.artPosition.width / 3}px;
-                                    height: ${template.artPosition.height / 3}px;
-                                    transform: rotate(${template.artPosition.rotation}deg);
+                                    position: absolute;
+                                    left: ${template ? template.artPosition.x / 3 : 50}px;
+                                    top: ${template ? template.artPosition.y / 3 : 50}px;
+                                    width: ${template ? template.artPosition.width / 3 : 50}px;
+                                    height: ${template ? template.artPosition.height / 3 : 50}px;
+                                    transform: rotate(${template ? template.artPosition.rotation : 0}deg);
                                 ">` : ''}
                             </div>
                             <div class="product-overlay">
@@ -497,8 +793,20 @@ const UI = {
                         </div>
                         <button class="remove-button" data-display-id="${display.id}">×</button>
                     `;
+                    
+                    // Add remove button event
+                    const removeButton = displayElement.querySelector('.remove-button');
+                    if (removeButton) {
+                        removeButton.addEventListener('click', e => {
+                            e.stopPropagation();
+                            const displayId = removeButton.getAttribute('data-display-id');
+                            gameState.removeFromDisplay(displayId);
+                            this.renderShopDisplays();
+                            this.renderInventory();
+                        });
+                    }
                 } else {
-                    // Product not found in inventory, reset display
+                    // Product not found, reset display
                     displayElement.innerHTML = '<div class="empty-display">Empty Display</div>';
                     gameState.removeFromDisplay(display.id);
                 }
@@ -507,7 +815,7 @@ const UI = {
                 displayElement.innerHTML = '<div class="empty-display">Empty Display</div>';
             }
             
-            // Add drop zone for drag and drop
+            // Set up drop zone for inventory items
             displayElement.addEventListener('dragover', e => {
                 if (!display.filled) {
                     e.preventDefault();
@@ -525,41 +833,13 @@ const UI = {
                 
                 const productId = e.dataTransfer.getData('product-id');
                 if (productId && !display.filled) {
-                    if (gameState.displayProduct(productId, display.id)) {
-                        Utils.showNotification('Product displayed!');
-                        this.renderShopDisplays();
-                        this.renderInventory();
-                        
-                        // Start customer spawning if this is the first product
-                        const filledDisplays = gameState.data.shopDisplays.filter(d => d.filled).length;
-                        if (filledDisplays === 1) {
-                            gameState.startCustomerSpawning();
-                        }
-                        
-                        // Generate a customer if we have none
-                        if (gameState.data.activeCustomers.length === 0) {
-                            Customers.generateInitialCustomers();
-                            this.renderCustomers();
-                        }
-                    }
+                    gameState.displayProduct(productId, display.id);
+                    this.renderShopDisplays();
+                    this.renderInventory();
                 }
             });
             
-            // Add remove button event
-            const removeButton = displayElement.querySelector('.remove-button');
-            if (removeButton) {
-                removeButton.addEventListener('click', e => {
-                    e.stopPropagation();
-                    const displayId = removeButton.getAttribute('data-display-id');
-                    if (gameState.removeFromDisplay(displayId)) {
-                        Utils.showNotification('Product removed from display');
-                        this.renderShopDisplays();
-                        this.renderInventory();
-                    }
-                });
-            }
-            
-            shopDisplays.appendChild(displayElement);
+            this.elements.shopDisplays.appendChild(displayElement);
         });
     },
     
@@ -567,13 +847,12 @@ const UI = {
      * Render customers
      */
     renderCustomers() {
-        const customerArea = document.getElementById('customerArea');
-        if (!customerArea) return;
+        if (!this.elements.customerArea) return;
         
-        customerArea.innerHTML = '';
+        this.elements.customerArea.innerHTML = '';
         
-        if (gameState.data.activeCustomers.length === 0) {
-            customerArea.innerHTML = '<div class="no-customers">No customers yet. Add products to your displays!</div>';
+        if (!gameState.data.activeCustomers || gameState.data.activeCustomers.length === 0) {
+            this.elements.customerArea.innerHTML = '<div class="no-customers">No customers yet. Add products to your displays!</div>';
             return;
         }
         
@@ -586,12 +865,10 @@ const UI = {
             const timeElapsed = (Date.now() - customer.enteredAt) / 1000;
             const patiencePercentage = Math.max(0, Math.min(100, 100 - (timeElapsed / customer.patience * 100)));
             
-            const speechText = this.getCustomerSpeechText(customer);
-            
             customerElement.innerHTML = `
                 <img src="${customer.avatar}" alt="${customer.type}" class="customer-avatar">
                 <div class="customer-speech-bubble">
-                    <p>${speechText}</p>
+                    <p>I'm looking for something nice!</p>
                 </div>
                 <div class="patience-bar">
                     <div class="patience-fill" style="width: ${patiencePercentage}%"></div>
@@ -600,47 +877,31 @@ const UI = {
             
             // Add click handler to show customer preferences
             customerElement.addEventListener('click', () => {
-                Customers.showPreferences(customer);
+                if (typeof Customers !== 'undefined' && typeof Customers.showPreferences === 'function') {
+                    Customers.showPreferences(customer);
+                }
             });
             
-            customerArea.appendChild(customerElement);
+            this.elements.customerArea.appendChild(customerElement);
         });
-    },
-    
-    /**
-     * Get random speech text for a customer
-     * @param {Object} customer - The customer object
-     * @returns {string} A speech bubble text
-     */
-    getCustomerSpeechText(customer) {
-        const speechOptions = [
-            "I'm looking for something nice!",
-            "Do you have anything I'd like?",
-            "I want to buy something!",
-            "Show me what you've got!",
-            `I love ${customer.preferences.products[0]} designs!`
-        ];
-        
-        return Utils.randomItem(speechOptions);
     },
     
     /**
      * Render inventory
      */
     renderInventory() {
-        const inventoryItems = document.getElementById('inventoryItems');
-        if (!inventoryItems) return;
+        if (!this.elements.inventoryItems) return;
         
-        inventoryItems.innerHTML = '';
+        this.elements.inventoryItems.innerHTML = '';
+        this.elements.inventoryItems.className = 'inventory-grid';
         
-        if (gameState.data.inventory.length === 0) {
-            inventoryItems.innerHTML = '<div class="empty-inventory">Your inventory is empty. Create products in the Studio!</div>';
+        if (!gameState.data.inventory || gameState.data.inventory.length === 0) {
+            this.elements.inventoryItems.innerHTML = '<div class="empty-inventory">Your inventory is empty. Create products in the Studio!</div>';
             return;
         }
         
         gameState.data.inventory.forEach(product => {
             const template = gameState.getProductTemplate(product.templateId);
-            if (!template) return;
             
             const itemElement = document.createElement('div');
             itemElement.className = 'inventory-item';
@@ -654,11 +915,12 @@ const UI = {
                 <div class="product-image-container">
                     <img src="${product.imageUrl}" alt="${product.name}" class="product-base-image">
                     ${product.artUrl ? `<img src="${product.artUrl}" alt="Custom Art" class="product-art-image" style="
-                        left: ${template.artPosition.x / 2.5}px;
-                        top: ${template.artPosition.y / 2.5}px;
-                        width: ${template.artPosition.width / 2.5}px;
-                        height: ${template.artPosition.height / 2.5}px;
-                        transform: rotate(${template.artPosition.rotation}deg);
+                        position: absolute;
+                        left: ${template ? template.artPosition.x / 2.5 : 40}px;
+                        top: ${template ? template.artPosition.y / 2.5 : 40}px;
+                        width: ${template ? template.artPosition.width / 2.5 : 60}px;
+                        height: ${template ? template.artPosition.height / 2.5 : 60}px;
+                        transform: rotate(${template ? template.artPosition.rotation : 0}deg);
                     ">` : ''}
                 </div>
                 <div class="product-info">
@@ -685,111 +947,160 @@ const UI = {
                 });
             }
             
-            inventoryItems.appendChild(itemElement);
+            this.elements.inventoryItems.appendChild(itemElement);
         });
     },
     
     /**
-     * Show display selection modal
-     * @param {string} productId - The product ID to display
+     * Show display selection dialog
      */
     showDisplaySelection(productId) {
-        // Check if there are any empty displays
         const emptyDisplays = gameState.data.shopDisplays.filter(d => !d.filled);
         
         if (emptyDisplays.length === 0) {
-            Utils.showNotification('All display spots are full! Remove something first.');
+            alert('All display spots are full! Remove something first.');
             return;
         }
         
-        // Create modal with display options
-        Utils.createModal({
-            title: 'Choose Display Location',
-            content: `
-                <p>Select where to display your product:</p>
-                <div class="display-options">
-                    ${emptyDisplays.map(display => `
-                        <div class="display-option" data-display-id="${display.id}">
-                            <div class="display-spot">Display Spot ${display.id.split('-')[1]}</div>
-                        </div>
-                    `).join('')}
+        // Create modal
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        modal.style.display = 'flex';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        modal.style.zIndex = '1000';
+        
+        // Create modal content
+        let displayOptions = '';
+        emptyDisplays.forEach(display => {
+            displayOptions += `
+                <div class="display-option" data-display-id="${display.id}">
+                    <div class="display-spot">Display Spot ${display.id.split('-')[1]}</div>
                 </div>
-            `,
-            buttons: []
+            `;
         });
         
-        // Add click handlers for display options
-        document.querySelectorAll('.display-option').forEach(option => {
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Choose Display Location</h3>
+                    <button class="close-modal">×</button>
+                </div>
+                <div class="modal-body">
+                    <p>Select where to display your product:</p>
+                    <div class="display-options">
+                        ${displayOptions}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add to document
+        document.body.appendChild(modal);
+        
+        // Add close button event
+        modal.querySelector('.close-modal').addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+        
+        // Add display option events
+        modal.querySelectorAll('.display-option').forEach(option => {
             option.addEventListener('click', () => {
                 const displayId = option.getAttribute('data-display-id');
-                if (gameState.displayProduct(productId, displayId)) {
-                    Utils.showNotification('Product displayed!');
-                    this.renderShopDisplays();
-                    this.renderInventory();
-                    
-                    // Remove the modal
-                    const modal = option.closest('.modal');
-                    if (modal) document.body.removeChild(modal);
-                    
-                    // Start customer spawning if this is the first product
-                    const filledDisplays = gameState.data.shopDisplays.filter(d => d.filled).length;
-                    if (filledDisplays === 1) {
-                        gameState.startCustomerSpawning();
-                    }
-                    
-                    // Generate a customer if we have none
-                    if (gameState.data.activeCustomers.length === 0) {
-                        Customers.generateInitialCustomers();
-                        this.renderCustomers();
-                    }
-                }
+                gameState.displayProduct(productId, displayId);
+                this.renderShopDisplays();
+                this.renderInventory();
+                document.body.removeChild(modal);
             });
         });
     },
     
     /**
-     * Show product preview after creation
-     * @param {Object} product - The newly created product
+     * Show product preview
      */
     showProductPreview(product) {
         const template = gameState.getProductTemplate(product.templateId);
-        if (!template) return;
         
-        Utils.createModal({
-            title: 'Product Created!',
-            content: `
+        // Create modal
+        const modal = document.createElement('div');
+        modal.className = 'product-modal';
+        
+        modal.innerHTML = `
+            <div class="product-modal-content">
+                <h2>Product Created!</h2>
+                <button class="close-button">×</button>
+                
                 <div class="product-preview">
-                    <div class="product-image-container" style="width: 200px; height: 200px; margin: 0 auto;">
-                        <img src="${product.imageUrl}" alt="${product.name}" class="product-base-image">
-                        <img src="${product.artUrl}" alt="Custom Art" class="product-art-image" style="
-                            left: ${template.artPosition.x / 1.5}px;
-                            top: ${template.artPosition.y / 1.5}px;
-                            width: ${template.artPosition.width / 1.5}px;
-                            height: ${template.artPosition.height / 1.5}px;
-                            transform: rotate(${template.artPosition.rotation}deg);
-                        ">
-                    </div>
-                    <div class="product-info" style="text-align: center; margin-top: 1rem;">
-                        <h4>${product.name}</h4>
-                        <p>Price: ${product.price} coins</p>
-                    </div>
+                    <img src="${product.imageUrl}" alt="${product.name}" class="product-base-image" style="max-width: 80%; max-height: 80%;">
+                    <img src="${product.artUrl}" alt="Custom Art" class="product-art-image" style="
+                        position: absolute;
+                        left: 50%;
+                        top: 50%;
+                        transform: translate(-50%, -50%) rotate(${template ? template.artPosition.rotation : 0}deg);
+                        width: ${template ? template.artPosition.width / 1.5 : 100}px;
+                        height: ${template ? template.artPosition.height / 1.5 : 100}px;
+                    ">
                 </div>
-            `,
-            buttons: [
-                {
-                    text: 'Display in Shop',
-                    type: 'accent-button',
-                    action: 'display',
-                    onClick: () => {
-                        this.showDisplaySelection(product.id);
-                    }
-                },
-                {
-                    text: 'Add to Inventory',
-                    type: 'secondary-button',
-                    action: 'inventory'
-                }
-            ]
+                
+                <div class="product-info">
+                    <h3>${product.name}</h3>
+                    <p>Price: ${product.price} coins</p>
+                </div>
+                
+                <div class="product-actions">
+                    <button class="shop-button">Add to Shop</button>
+                    <button class="inventory-button">Add to Inventory</button>
+                </div>
+            </div>
+        `;
+        
+        // Add to document
+        document.body.appendChild(modal);
+        
+        // Add close button event
+        modal.querySelector('.close-button').addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+        
+        // Add shop button event
+        modal.querySelector('.shop-button').addEventListener('click', () => {
+            // Find empty display spot
+            const emptySpot = gameState.data.shopDisplays.find(spot => !spot.filled);
+            
+            if (emptySpot) {
+                // Add to inventory first
+                gameState.data.inventory.push(product);
+                
+                // Display in shop
+                gameState.displayProduct(product.id, emptySpot.id);
+                
+                // Update UI
+                this.renderShopDisplays();
+                this.renderInventory();
+                
+                // Close modal
+                document.body.removeChild(modal);
+            } else {
+                alert('No empty display spots available. Please remove some items first.');
+            }
+        });
+        
+        // Add inventory button event
+        modal.querySelector('.inventory-button').addEventListener('click', () => {
+            // Add to inventory
+            gameState.data.inventory.push(product);
+            
+            // Update UI
+            this.renderInventory();
+            
+            // Close modal
+            document.body.removeChild(modal);
         });
     },
     
@@ -797,15 +1108,44 @@ const UI = {
      * Start a new day
      */
     startNewDay() {
-        const newDay = gameState.startNewDay();
-        
+        gameState.startNewDay();
         this.updateDayDisplay();
         
         // Generate new customers
-        Customers.generateInitialCustomers();
+        if (typeof Customers !== 'undefined' && typeof Customers.generateInitialCustomers === 'function') {
+            Customers.generateInitialCustomers();
+        }
         this.renderCustomers();
         
-        Utils.showNotification(`Day ${newDay} has begun!`);
+        this.showNotification(`Day ${gameState.data.day} has begun!`);
+    },
+    
+    /**
+     * Show notification
+     */
+    showNotification(message, duration = 3000) {
+        // Create or get notification element
+        let notification = document.getElementById('notification');
+        
+        if (!notification) {
+            notification = document.createElement('div');
+            notification.id = 'notification';
+            notification.className = 'notification';
+            document.body.appendChild(notification);
+        }
+        
+        // Set message and show
+        notification.textContent = message;
+        notification.classList.remove('hidden');
+        notification.classList.add('show');
+        
+        // Hide after duration
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                notification.classList.add('hidden');
+            }, 300);
+        }, duration);
     },
     
     /**
@@ -819,8 +1159,8 @@ const UI = {
         this.renderCustomers();
         this.renderInventory();
         this.updateSettingsUI();
-        
-        Canvas.populateProductSelector();
-        Canvas.populateColorPalette();
     }
 };
+
+// For compatibility with older code
+const ui = UI;
