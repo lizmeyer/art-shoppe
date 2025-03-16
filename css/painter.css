@@ -1,0 +1,274 @@
+/* Painter Styles for Cozy Artist Shop */
+
+/* Studio Container */
+.studio-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1rem;
+    gap: 1rem;
+    overflow-y: auto;
+}
+
+@media (min-width: 768px) {
+    .studio-container {
+        flex-direction: row;
+    }
+}
+
+/* Canvas Container */
+.canvas-container {
+    flex: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+#paintCanvas {
+    background-color: white;
+    border-radius: 4px;
+    cursor: crosshair;
+    max-width: 100%;
+    max-height: 80vh;
+    touch-action: none; /* Prevents scrolling on touch devices */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Tool Palette */
+.tool-palette {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+/* Color Picker */
+.color-picker {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5rem;
+}
+
+.color-swatch {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid var(--border-color);
+    transition: transform 0.2s ease;
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
+}
+
+.color-swatch.active {
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px var(--text-color);
+}
+
+/* Brush Sizes */
+.brush-sizes {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin: 1rem 0;
+}
+
+.brush-size {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: var(--text-color);
+    padding: 0;
+    border: 2px solid transparent;
+}
+
+.brush-size:hover {
+    transform: scale(1.1);
+}
+
+.brush-size.active {
+    border-color: white;
+    box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+.brush-size[data-size="2"] {
+    transform: scale(0.5);
+}
+
+.brush-size[data-size="5"] {
+    transform: scale(0.75);
+}
+
+.brush-size[data-size="10"] {
+    transform: scale(1);
+}
+
+.brush-size[data-size="2"].active, .brush-size[data-size="2"]:hover {
+    transform: scale(0.6);
+}
+
+.brush-size[data-size="5"].active, .brush-size[data-size="5"]:hover {
+    transform: scale(0.85);
+}
+
+.brush-size[data-size="10"].active, .brush-size[data-size="10"]:hover {
+    transform: scale(1.1);
+}
+
+/* Tools */
+.tools {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.tool-button {
+    text-align: center;
+    padding: 0.5rem;
+}
+
+.tool-button.active {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+/* Product Preview */
+.product-preview {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+.product-selector {
+    display: flex;
+    overflow-x: auto;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+}
+
+.product-option {
+    min-width: 80px;
+    text-align: center;
+    padding: 0.5rem;
+    cursor: pointer;
+    border-radius: var(--border-radius);
+    transition: all 0.2s ease;
+    background-color: var(--button-color);
+    border: 2px solid transparent;
+}
+
+.product-option:hover {
+    background-color: var(--button-hover);
+}
+
+.product-option.active {
+    border-color: var(--accent-color);
+    background-color: var(--button-hover);
+}
+
+.product-option img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    margin-bottom: 0.25rem;
+}
+
+.preview-display {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: white;
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    min-height: 200px;
+}
+
+.product-display {
+    position: relative;
+    width: 180px;
+    height: 180px;
+}
+
+.product-base {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.product-art {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    mix-blend-mode: multiply;
+}
+
+.save-button {
+    background-color: var(--success-color);
+    padding: 0.75rem;
+    font-weight: 600;
+}
+
+/* Created Product Modal */
+.created-product {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 1rem 0;
+    padding: 1rem;
+    background-color: white;
+    border-radius: var(--border-radius);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .tools {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .canvas-container {
+        padding: 0.5rem;
+    }
+    
+    #paintCanvas {
+        max-height: 50vh;
+    }
+}
+
+@media (max-width: 480px) {
+    .color-picker {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .tools {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .product-option {
+        min-width: 60px;
+    }
+    
+    .product-option img {
+        width: 40px;
+        height: 40px;
+    }
+}
