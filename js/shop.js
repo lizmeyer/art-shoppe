@@ -656,3 +656,158 @@ function showDaySummary() {
     modal.appendChild(modalContent);
     document.body.appendChild(modal);
 }
+
+// Function to fix the "Click to add a product" functionality
+function fixShopDisplays() {
+    console.log("Fixing shop displays...");
+    
+    // Get all empty display spots
+    const emptyDisplays = document.querySelectorAll('.shop-display:not(.filled)');
+    
+    emptyDisplays.forEach(display => {
+        // Clear any existing event listeners by cloning and replacing
+        const newDisplay = display.cloneNode(true);
+        display.parentNode.replaceChild(newDisplay, display);
+        
+        // Set cursor style to indicate it's clickable
+        newDisplay.style.cursor = 'pointer';
+        
+        // Add click event listener
+        newDisplay.addEventListener('click', function() {
+            const displayId = this.id;
+            
+            // Check if shop is open
+            if (shopState && shopState.dayInProgress) {
+                showNotification('Cannot change displays while shop is open!');
+                return;
+            }
+            
+            // Show inventory to select a product
+            showInventoryForDisplay(displayId);
+        });
+    });
+}
+
+// Modify the existing renderShopDisplays function
+const originalRenderShopDisplays = renderShopDisplays;
+renderShopDisplays = function() {
+    // Call original function
+    originalRenderShopDisplays();
+    
+    // Then fix the click handlers
+    setTimeout(fixShopDisplays, 100);
+};
+
+// Function to show inventory for selecting a product
+function showInventoryForDisplay(displayId) {
+    // Create modal
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.id = 'inventoryModal';
+    
+    const modalContent = document.createElement('div');
+    modalContent.className = 'modal-content';
+    
+    const title = document.createElement('h2');
+    title.textContent = 'Select a Product to Display';
+    
+    const productsGrid = document.createElement('div');
+    productsGrid.className = 'inventory-grid';
+    
+    // Filter for products not already displayed
+    const availableProducts = gameState.inventory.filter(p => !p.displayed);
+    
+    if (availableProducts.length === 0) {
+        const noProducts = document.createElement('p');
+        noProducts.textContent = 'No products available. Create some in the Art Studio!';
+        productsGrid.appendChild(noProducts);
+    } else {
+        availableProducts.forEach(product => {
+            const template = getProductTemplate(product.templateId);
+            
+            const productEl = document.createElement('div');
+            productEl.className = 'inventory-item';
+            
+            // Create preview container
+            const previewContainer = document.createElement('div');
+            previewContainer.className = 'inventory-item-image';
+            previewContainer.style.position = 'relative';
+            
+            // Product base image
+            const baseImg = document.createElement('img');
+            baseImg.src = product.imageUrl;
+            baseImg.alt = product.name;
+            baseImg.style.width = '100%';
+            baseImg.style.height = '100%';
+            baseImg.style.objectFit = 'contain';
+            
+            // Get art position
+            const artPosition = product.customArtPosition || getArtPosition(product.templateId);
+            
+            // Art overlay
+            const artImg = document.createElement('img');
+            artImg.src = product.artUrl;
+            artImg.alt = "Custom Art";
+            artImg.style.position = 'absolute';
+            artImg.style.top = artPosition.top;
+            artImg.style.left = artPosition.left;
+            artImg.style.width = artPosition.width;
+            artImg.style.height = artPosition.height;
+            artImg.style.mixBlendMode = 'multiply';
+            
+            previewContainer.appendChild(baseImg);
+            previewContainer.appendChild(artImg);
+            
+            // Product details
+            const details = document.createElement('div');
+            details.className = 'inventory-item-details';
+            
+            const name = document.createElement('div');
+            name.className = 'inventory-item-name';
+            name.textContent = product.name;
+            
+            const price = document.createElement('div');
+            price.className = 'inventory-item-price';
+            
+            const coinImg = document.createElement('img');
+            coinImg.src = 'images/ui/coin.png';
+            coinImg.onerror = function() {
+                this.outerHTML = '🪙';
+            };
+            
+            const priceText = document.createElement('span');
+            priceText.textContent = product.price;
+            
+            price.appendChild(coinImg);
+            price.appendChild(priceText);
+            
+            details.appendChild(name);
+            details.appendChild(price);
+            
+            productEl.appendChild(previewContainer);
+            productEl.appendChild(details);
+            
+            // Add click event
+            productEl.addEventListener('click', function() {
+                if (displayProduct(product.id, displayId)) {
+                    renderShopDisplays();
+                    closeModal();
+                    showNotification('Product added to display!');
+                }
+            });
+            
+            productsGrid.appendChild(productEl);
+        });
+    }
+    
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = 'Cancel';
+    closeBtn.addEventListener('click', closeModal);
+    
+    modalContent.appendChild(title);
+    modalContent.appendChild(productsGrid);
+    modalContent.appendChild(closeBtn);
+    
+    modal.appendChild(modalContent);
+    document.body.appendChild(modal);
+}
