@@ -1,0 +1,330 @@
+/* Component Styles for Cozy Artist Shop */
+
+/* Inventory Items */
+.inventory-item {
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    box-shadow: 0 2px 4px var(--shadow-color);
+    transition: transform var(--transition-speed) ease;
+    cursor: pointer;
+}
+
+.inventory-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 10px var(--shadow-color);
+}
+
+.inventory-item-image {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: contain;
+    background-color: white;
+    border-radius: calc(var(--border-radius) - 4px);
+}
+
+.inventory-item-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.inventory-item-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.inventory-item-price {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+}
+
+.inventory-item-price img {
+    width: 12px;
+    height: 12px;
+}
+
+.inventory-item-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.inventory-item-actions button {
+    flex: 1;
+    padding: 0.3rem;
+    font-size: 0.8rem;
+}
+
+/* Shop Display Items */
+.shop-display {
+    background-color: white;
+    border-radius: var(--border-radius);
+    padding: 0.75rem;
+    box-shadow: 0 2px 4px var(--shadow-color);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-height: 160px;
+    border: 1px dashed var(--border-color);
+    cursor: pointer;
+    transition: all var(--transition-speed) ease;
+}
+
+.shop-display:hover {
+    border-style: solid;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+.shop-display.filled {
+    border-style: solid;
+    background-color: var(--bg-secondary);
+}
+
+.shop-display-image {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80px;
+}
+
+.shop-display-image img {
+    max-width: 100%;
+    max-height: 80px;
+    object-fit: contain;
+}
+
+.shop-display-price {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.shop-display-price img {
+    width: 14px;
+    height: 14px;
+}
+
+.empty-display-text {
+    font-size: 0.8rem;
+    color: var(--border-color);
+    text-align: center;
+}
+
+/* Customer */
+.customer {
+    position: absolute;
+    bottom: 0;
+    width: 80px;
+    height: 120px;
+    transition: transform 1s ease;
+    z-index: 2;
+}
+
+.customer-body {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.customer-avatar {
+    width: 60px;
+    height: 60px;
+    background-color: var(--accent-color);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    color: white;
+    border: 2px solid white;
+    overflow: hidden;
+}
+
+.customer-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.customer-body {
+    animation: customerBob 2s infinite ease-in-out;
+}
+
+.customer-thoughts {
+    position: absolute;
+    top: -40px;
+    background-color: white;
+    border-radius: var(--border-radius);
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    box-shadow: 0 2px 4px var(--shadow-color);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    max-width: 120px;
+    text-align: center;
+}
+
+.customer-thoughts.active {
+    opacity: 1;
+}
+
+.customer-thoughts:after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid white;
+}
+
+@keyframes customerBob {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+    100% { transform: translateY(0); }
+}
+
+/* Buttons */
+.accent-button {
+    background-color: var(--accent-color);
+    color: white;
+    font-weight: 600;
+}
+
+.icon-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 1.2rem;
+}
+
+/* Themes Selector */
+.theme-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.theme-option {
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    cursor: pointer;
+    text-align: center;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.theme-option:hover {
+    transform: translateY(-3px);
+}
+
+.theme-option.active {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+.theme-option[data-theme="pastel"] {
+    background-color: #ffd6e0;
+    color: #664e56;
+}
+
+.theme-option[data-theme="mint"] {
+    background-color: #c5e8d1;
+    color: #4e664f;
+}
+
+.theme-option[data-theme="lavender"] {
+    background-color: #e0d6ff;
+    color: #57526e;
+}
+
+/* Day Summary */
+.day-summary {
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.summary-header {
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+.summary-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.summary-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: calc(var(--border-radius) - 4px);
+}
+
+.summary-total {
+    font-weight: 600;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Helper Classes */
+.text-center {
+    text-align: center;
+}
+
+.flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.mt-1 {
+    margin-top: 0.5rem;
+}
+
+.mt-2 {
+    margin-top: 1rem;
+}
+
+.mb-1 {
+    margin-bottom: 0.5rem;
+}
+
+.mb-2 {
+    margin-bottom: 1rem;
+}
