@@ -515,6 +515,8 @@ function createProduct() {
         return;
     }
     
+    console.log("Creating product with selected template:", painter.selectedProduct);
+    
     // Ensure we have the latest canvas data
     updateArtDataUrl();
     
@@ -528,13 +530,36 @@ function createProduct() {
         created: new Date().toISOString()
     };
     
-    console.log("Creating product with art:", painter.artDataUrl);
+    console.log("Product object created:", product);
     
-    // Add to inventory
-    const newProduct = addToInventory(product);
-    
-    // Show created product
-    showCreatedProduct(newProduct);
+    try {
+        // Add to inventory
+        console.log("Adding product to inventory...");
+        const newProduct = addToInventory(product);
+        console.log("Product added to inventory, new product ID:", newProduct.id);
+        
+        // Save game state to persist
+        if (typeof saveGame === 'function') {
+            saveGame();
+            console.log("Game state saved");
+        }
+        
+        // Show created product
+        showCreatedProduct(newProduct);
+        
+        // Show success notification
+        showNotification('Product created and added to inventory!');
+        
+        // Update inventory display if on inventory tab
+        if (document.getElementById('inventoryTab').classList.contains('active')) {
+            if (typeof renderInventory === 'function') {
+                renderInventory();
+            }
+        }
+    } catch (e) {
+        console.error("Error creating product:", e);
+        showNotification('Error creating product');
+    }
 }
 
 // Show the created product in a modal
