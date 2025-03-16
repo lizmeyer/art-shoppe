@@ -196,5 +196,46 @@
     <script src="js/customers.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/main.js"></script>
+    <script>
+  // Debugging script for Create Product button
+  document.addEventListener('DOMContentLoaded', function() {
+    // 1. Log all buttons on the page to see if we can find your create button
+    console.log('All buttons on page:', document.querySelectorAll('button'));
+    
+    // 2. Try to find the Create Product button by text content
+    const createButtons = Array.from(document.querySelectorAll('button'))
+      .filter(button => button.textContent.includes('Create Product'));
+    console.log('Found Create Product buttons:', createButtons);
+    
+    // 3. Check if Canvas object exists
+    console.log('Canvas object exists:', typeof Canvas !== 'undefined');
+    
+    // 4. Check if saveArtwork method exists
+    console.log('Canvas.saveArtwork exists:', typeof Canvas !== 'undefined' && typeof Canvas.saveArtwork === 'function');
+    
+    // 5. Look for existing click handler
+    if (createButtons.length > 0) {
+      const createButton = createButtons[0];
+      console.log('Button ID:', createButton.id);
+      
+      // 6. Add our own click handler
+      createButton.addEventListener('click', function(e) {
+        console.log('Create Product button clicked');
+        
+        // 7. Try to call saveArtwork directly
+        try {
+          if (typeof Canvas !== 'undefined' && typeof Canvas.saveArtwork === 'function') {
+            console.log('Calling Canvas.saveArtwork()');
+            Canvas.saveArtwork();
+          } else {
+            console.error('Canvas.saveArtwork function not found');
+          }
+        } catch (error) {
+          console.error('Error calling saveArtwork:', error);
+        }
+      });
+    }
+  });
+</script>
 </body>
 </html>
