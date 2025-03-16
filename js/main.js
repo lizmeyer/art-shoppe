@@ -5,6 +5,8 @@
 
 // Initialize the game when document is loaded
 document.addEventListener('DOMContentLoaded', function() {
+    gameState.init();
+    UI.init();
     console.log("Document loaded, starting game initialization...");
     
     // Start loading screen
