@@ -4,10 +4,8 @@
  */
 
 const Canvas = {
-    // Canvas DOM element
+    // Canvas element and context
     element: null,
-    
-    // Drawing context
     ctx: null,
     
     // Canvas state
@@ -17,13 +15,11 @@ const Canvas = {
         brushSize: 5,
         lastX: 0,
         lastY: 0,
-        selectedProduct: null,
-        artDataUrl: null
+        selectedProduct: null
     },
     
     /**
      * Initialize the canvas
-     * @returns {boolean} Success status
      */
     init() {
         try {
@@ -38,12 +34,12 @@ const Canvas = {
             // Clear canvas with white background
             this.clear();
             
-            // Set initial brush properties
-            this.ctx.lineCap = 'round';
-            this.ctx.lineJoin = 'round';
-            
             // Set up event listeners
             this.setupEventListeners();
+            
+            // Initialize product selector and color palette
+            this.populateProductSelector();
+            this.populateColorPalette();
             
             return true;
         } catch (error) {
@@ -64,7 +60,7 @@ const Canvas = {
         this.element.addEventListener('mouseup', () => this.stopDrawing());
         this.element.addEventListener('mouseout', () => this.stopDrawing());
         
-        // Touch events
+        // Touch events for mobile
         this.element.addEventListener('touchstart', (e) => {
             e.preventDefault();
             const touch = e.touches[0];
@@ -84,50 +80,10 @@ const Canvas = {
         });
         
         this.element.addEventListener('touchend', () => this.stopDrawing());
-        
-        // Color palette
-        const colorPalette = document.getElementById('colorPalette');
-        if (colorPalette) {
-            colorPalette.addEventListener('click', (e) => {
-                if (e.target.classList.contains('color-swatch')) {
-                    const color = e.target.getAttribute('data-color');
-                    this.selectColor(color);
-                }
-            });
-        }
-        
-        // Brush size
-        const brushSizeInput = document.getElementById('brushSize');
-        if (brushSizeInput) {
-            brushSizeInput.addEventListener('input', (e) => {
-                this.setBrushSize(parseInt(e.target.value));
-            });
-        }
-        
-        // Clear button
-        const clearButton = document.getElementById('clearArtButton');
-        if (clearButton) {
-            clearButton.addEventListener('click', () => this.clear());
-        }
-        
-        // Save button
-        const saveButton = document.getElementById('saveArtButton');
-        if (saveButton) {
-            saveButton.addEventListener('click', () => this.saveArtwork());
-        }
-        
-        // Product selector
-        const productSelector = document.getElementById('productSelector');
-        if (productSelector) {
-            productSelector.addEventListener('change', (e) => {
-                this.selectProduct(e.target.value);
-            });
-        }
     },
     
     /**
      * Start drawing on canvas
-     * @param {Object} event - Mouse or touch event
      */
     startDrawing(event) {
         if (!this.ctx) return;
@@ -141,7 +97,6 @@ const Canvas = {
     
     /**
      * Draw on canvas
-     * @param {Object} event - Mouse or touch event
      */
     draw(event) {
         if (!this.ctx || !this.state.isDrawing) return;
@@ -153,6 +108,8 @@ const Canvas = {
         this.ctx.beginPath();
         this.ctx.strokeStyle = this.state.currentColor;
         this.ctx.lineWidth = this.state.brushSize;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
         
         this.ctx.moveTo(this.state.lastX, this.state.lastY);
         this.ctx.lineTo(x, y);
@@ -180,15 +137,12 @@ const Canvas = {
     },
     
     /**
-     * Select a color
-     * @param {string} color - Hex color code
+     * Select a color for drawing
      */
     selectColor(color) {
         this.state.currentColor = color;
         
-        // Update UI
-        const swatches = document.querySelectorAll('.color-swatch');
-        swatches.forEach(swatch => {
+        document.querySelectorAll('.color-swatch').forEach(swatch => {
             if (swatch.getAttribute('data-color') === color) {
                 swatch.classList.add('selected');
             } else {
@@ -198,52 +152,21 @@ const Canvas = {
     },
     
     /**
-     * Set brush size
-     * @param {number} size - Brush size in pixels
-     */
-    setBrushSize(size) {
-        this.state.brushSize = size;
-    },
-    
-    /**
-     * Select a product template
-     * @param {string} productId - Product template ID
-     */
-    selectProduct(productId) {
-        const template = gameState.getProductTemplate(productId);
-        if (!template) return;
-        
-        this.state.selectedProduct = template;
-        
-        // Show product template on canvas background
-        const productPreview = document.getElementById('productPreview');
-        if (productPreview) {
-            productPreview.innerHTML = `
-                <img src="${template.image}" alt="${template.name}" class="product-template"
-                    style="max-width: 90%; max-height: 90%; opacity: 0.3;">
-            `;
-        }
-        
-        // Clear canvas
-        this.clear();
-    },
-    
-    /**
      * Save artwork and create a product
      */
     saveArtwork() {
-        if (!this.ctx || !this.state.selectedProduct) {
+        if (!this.element || !this.state.selectedProduct) {
             Utils.showNotification('Please select a product first');
             return;
         }
         
         try {
             // Get the art data URL
-            this.state.artDataUrl = this.element.toDataURL('image/png');
+            const artDataUrl = this.element.toDataURL('image/png');
             
             // Calculate price based on template
             const basePrice = this.state.selectedProduct.basePrice;
-            const price = basePrice + Utils.randomNumber(5, 15);
+            const price = basePrice + Math.floor(Math.random() * 10) + 5;
             
             // Create the product
             const newProduct = {
@@ -251,7 +174,7 @@ const Canvas = {
                 name: `${this.state.selectedProduct.name} with Custom Art`,
                 price: price,
                 imageUrl: this.state.selectedProduct.image,
-                artUrl: this.state.artDataUrl
+                artUrl: artDataUrl
             };
             
             // Add to inventory
@@ -259,11 +182,7 @@ const Canvas = {
             
             if (addedProduct) {
                 Utils.showNotification(`Created new ${this.state.selectedProduct.name}!`);
-                
-                // Clear canvas
                 this.clear();
-                
-                // Show product preview
                 UI.showProductPreview(addedProduct);
             }
         } catch (error) {
@@ -273,7 +192,29 @@ const Canvas = {
     },
     
     /**
-     * Populate color palette with available colors
+     * Populate the product selector
+     */
+    populateProductSelector() {
+        const selector = document.getElementById('productSelector');
+        if (!selector) return;
+        
+        selector.innerHTML = '';
+        
+        ProductData.templates.forEach(template => {
+            const option = document.createElement('option');
+            option.value = template.id;
+            option.textContent = template.name;
+            selector.appendChild(option);
+        });
+        
+        // Select the first product by default
+        if (ProductData.templates.length > 0) {
+            this.selectProduct(ProductData.templates[0].id);
+        }
+    },
+    
+    /**
+     * Populate the color palette
      */
     populateColorPalette() {
         const palette = document.getElementById('colorPalette');
@@ -291,29 +232,33 @@ const Canvas = {
                 swatch.classList.add('selected');
             }
             
+            swatch.addEventListener('click', () => {
+                this.selectColor(color);
+            });
+            
             palette.appendChild(swatch);
         });
     },
     
     /**
-     * Populate product selector with available templates
+     * Select a product template
      */
-    populateProductSelector() {
-        const selector = document.getElementById('productSelector');
-        if (!selector) return;
+    selectProduct(productId) {
+        const template = gameState.getProductTemplate(productId);
+        if (!template) return;
         
-        selector.innerHTML = '';
+        this.state.selectedProduct = template;
         
-        ProductData.templates.forEach(template => {
-            const option = document.createElement('option');
-            option.value = template.id;
-            option.textContent = template.name;
-            selector.appendChild(option);
-        });
-        
-        // Select the first product by default
-        if (ProductData.templates.length > 0 && !this.state.selectedProduct) {
-            this.selectProduct(ProductData.templates[0].id);
+        // Update product preview
+        const productPreview = document.getElementById('productPreview');
+        if (productPreview) {
+            productPreview.innerHTML = `
+                <img src="${template.image}" alt="${template.name}" class="product-template" 
+                    style="max-width: 80%; max-height: 80%; opacity: 0.3;">
+            `;
         }
+        
+        // Clear canvas for new product
+        this.clear();
     }
 };
