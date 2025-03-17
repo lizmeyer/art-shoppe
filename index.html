@@ -1218,6 +1218,41 @@ setTimeout(window.debugGame, 1000);
   }, 1000);
 })();
 </script>
+
+
+    // Add at the end of your HTML, before the closing body tag
+<script>
+    // Debug product data
+    document.addEventListener('DOMContentLoaded', function() {
+        console.group('Product Data Debugging');
+        console.log('ProductData object exists:', typeof window.ProductData !== 'undefined');
+        
+        if (window.ProductData && Array.isArray(window.ProductData.templates)) {
+            console.log('Product templates found:', window.ProductData.templates.length);
+            console.log('Templates:', window.ProductData.templates);
+        } else {
+            console.error('Product templates not found or not an array');
+        }
+        
+        // Check gameState product methods
+        console.log('gameState exists:', typeof window.gameState !== 'undefined');
+        if (window.gameState) {
+            console.log('getProductTemplate method exists:', typeof window.gameState.getProductTemplate === 'function');
+            
+            if (typeof window.gameState.getProductTemplate === 'function') {
+                console.log('Sample product template:', window.gameState.getProductTemplate('mug'));
+            }
+        }
+        
+        // Check product selector element
+        const productSelector = document.getElementById('productSelector');
+        console.log('Product selector element found:', !!productSelector);
+        if (productSelector) {
+            console.log('Product selector options:', productSelector.options.length);
+        }
+        console.groupEnd();
+    });
+</script>
     
     
 </body>
