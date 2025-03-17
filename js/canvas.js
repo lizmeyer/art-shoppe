@@ -1,319 +1,344 @@
-/**
- * Canvas Controller for Cozy Artist Shop
- * Handles the drawing canvas for creating art
- */
-
+// canvas.js
 const Canvas = {
-    // Canvas DOM element
-    element: null,
-    
-    // Drawing context
+    canvas: null,
     ctx: null,
+    currentColor: '#000000',
+    brushSize: 5,
+    isDrawing: false,
+    lastX: 0,
+    lastY: 0,
     
-    // Canvas state
-    state: {
-        isDrawing: false,
-        currentColor: '#000000',
-        brushSize: 5,
-        lastX: 0,
-        lastY: 0,
-        selectedProduct: null,
-        artDataUrl: null
-    },
-    
-    /**
-     * Initialize the canvas
-     * @returns {boolean} Success status
-     */
-    init() {
+    init: function() {
+        console.log('Canvas.init called');
         try {
-            this.element = document.getElementById('artCanvas');
-            if (!this.element) {
-                console.warn('Canvas element not found');
+            // Get the canvas element
+            this.canvas = document.getElementById('artCanvas');
+            if (!this.canvas) {
+                console.error('Canvas element not found');
                 return false;
             }
             
-            this.ctx = this.element.getContext('2d');
+            // Get the context
+            this.ctx = this.canvas.getContext('2d');
+            if (!this.ctx) {
+                console.error('Could not get canvas context');
+                return false;
+            }
             
-            // Clear canvas with white background
-            this.clear();
-            
-            // Set initial brush properties
-            this.ctx.lineCap = 'round';
-            this.ctx.lineJoin = 'round';
+            // Initialize with white background
+            this.clearCanvas();
             
             // Set up event listeners
             this.setupEventListeners();
             
+            // Initialize color palette
+            this.setupColorPalette();
+            
+            // Initialize brush size
+            this.setupBrushSize();
+            
+            console.log('Canvas initialized successfully');
             return true;
         } catch (error) {
-            console.error('Failed to initialize canvas:', error);
+            console.error('Error initializing Canvas:', error);
             return false;
         }
     },
     
-    /**
-     * Set up canvas event listeners
-     */
-    setupEventListeners() {
-        if (!this.element) return;
-        
+    setupEventListeners: function() {
         // Mouse events
-        this.element.addEventListener('mousedown', (e) => this.startDrawing(e));
-        this.element.addEventListener('mousemove', (e) => this.draw(e));
-        this.element.addEventListener('mouseup', () => this.stopDrawing());
-        this.element.addEventListener('mouseout', () => this.stopDrawing());
+        this.canvas.addEventListener('mousedown', this.startDrawing.bind(this));
+        this.canvas.addEventListener('mousemove', this.draw.bind(this));
+        this.canvas.addEventListener('mouseup', this.stopDrawing.bind(this));
+        this.canvas.addEventListener('mouseout', this.stopDrawing.bind(this));
         
         // Touch events
-        this.element.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            this.startDrawing({
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-        });
-        
-        this.element.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            this.draw({
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-        });
-        
-        this.element.addEventListener('touchend', () => this.stopDrawing());
-        
-        // Color palette
-        const colorPalette = document.getElementById('colorPalette');
-        if (colorPalette) {
-            colorPalette.addEventListener('click', (e) => {
-                if (e.target.classList.contains('color-swatch')) {
-                    const color = e.target.getAttribute('data-color');
-                    this.selectColor(color);
-                }
-            });
-        }
-        
-        // Brush size
-        const brushSizeInput = document.getElementById('brushSize');
-        if (brushSizeInput) {
-            brushSizeInput.addEventListener('input', (e) => {
-                this.setBrushSize(parseInt(e.target.value));
-            });
-        }
+        this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this));
+        this.canvas.addEventListener('touchmove', this.handleTouchMove.bind(this));
+        this.canvas.addEventListener('touchend', this.stopDrawing.bind(this));
         
         // Clear button
         const clearButton = document.getElementById('clearArtButton');
         if (clearButton) {
-            clearButton.addEventListener('click', () => this.clear());
+            clearButton.addEventListener('click', this.clearCanvas.bind(this));
         }
         
         // Save button
         const saveButton = document.getElementById('saveArtButton');
         if (saveButton) {
-            saveButton.addEventListener('click', () => this.saveArtwork());
+            saveButton.addEventListener('click', this.saveArtwork.bind(this));
         }
+    },
+    
+    setupColorPalette: function() {
+        const colorPalette = document.getElementById('colorPalette');
+        if (!colorPalette) return;
         
-        // Product selector
-        const productSelector = document.getElementById('productSelector');
-        if (productSelector) {
-            productSelector.addEventListener('change', (e) => {
-                this.selectProduct(e.target.value);
+        // Clear existing palette
+        colorPalette.innerHTML = '';
+        
+        // Add colors from product data
+        if (window.ProductData && window.ProductData.colorPalette) {
+            window.ProductData.colorPalette.forEach(color => {
+                const colorSwatch = document.createElement('div');
+                colorSwatch.className = 'color-swatch';
+                colorSwatch.style.backgroundColor = color;
+                colorSwatch.addEventListener('click', () => {
+                    this.setColor(color);
+                    
+                    // Update UI for selected color
+                    document.querySelectorAll('.color-swatch').forEach(swatch => {
+                        swatch.classList.remove('selected');
+                    });
+                    colorSwatch.classList.add('selected');
+                });
+                
+                colorPalette.appendChild(colorSwatch);
+            });
+            
+            // Select the first color
+            if (colorPalette.firstChild) {
+                colorPalette.firstChild.classList.add('selected');
+            }
+        }
+    },
+    
+    setupBrushSize: function() {
+        const brushSizeSlider = document.getElementById('brushSize');
+        if (brushSizeSlider) {
+            brushSizeSlider.value = this.brushSize;
+            brushSizeSlider.addEventListener('input', (e) => {
+                this.brushSize = parseInt(e.target.value);
             });
         }
     },
     
-    /**
-     * Start drawing on canvas
-     * @param {Object} event - Mouse or touch event
-     */
-    startDrawing(event) {
-        if (!this.ctx) return;
-        
-        this.state.isDrawing = true;
-        
-        const rect = this.element.getBoundingClientRect();
-        this.state.lastX = event.clientX - rect.left;
-        this.state.lastY = event.clientY - rect.top;
+    startDrawing: function(e) {
+        this.isDrawing = true;
+        const rect = this.canvas.getBoundingClientRect();
+        this.lastX = e.clientX - rect.left;
+        this.lastY = e.clientY - rect.top;
     },
     
-    /**
-     * Draw on canvas
-     * @param {Object} event - Mouse or touch event
-     */
-    draw(event) {
-        if (!this.ctx || !this.state.isDrawing) return;
+    draw: function(e) {
+        if (!this.isDrawing) return;
         
-        const rect = this.element.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
         
         this.ctx.beginPath();
-        this.ctx.strokeStyle = this.state.currentColor;
-        this.ctx.lineWidth = this.state.brushSize;
+        this.ctx.strokeStyle = this.currentColor;
+        this.ctx.lineWidth = this.brushSize;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
         
-        this.ctx.moveTo(this.state.lastX, this.state.lastY);
+        this.ctx.moveTo(this.lastX, this.lastY);
         this.ctx.lineTo(x, y);
         this.ctx.stroke();
         
-        this.state.lastX = x;
-        this.state.lastY = y;
+        this.lastX = x;
+        this.lastY = y;
     },
     
-    /**
-     * Stop drawing
-     */
-    stopDrawing() {
-        this.state.isDrawing = false;
-    },
-    
-    /**
-     * Clear the canvas
-     */
-    clear() {
-        if (!this.ctx || !this.element) return;
-        
-        this.ctx.fillStyle = '#FFFFFF';
-        this.ctx.fillRect(0, 0, this.element.width, this.element.height);
-    },
-    
-    /**
-     * Select a color
-     * @param {string} color - Hex color code
-     */
-    selectColor(color) {
-        this.state.currentColor = color;
-        
-        // Update UI
-        const swatches = document.querySelectorAll('.color-swatch');
-        swatches.forEach(swatch => {
-            if (swatch.getAttribute('data-color') === color) {
-                swatch.classList.add('selected');
-            } else {
-                swatch.classList.remove('selected');
-            }
+    handleTouchStart: function(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        this.startDrawing({
+            clientX: touch.clientX,
+            clientY: touch.clientY
         });
     },
     
-    /**
-     * Set brush size
-     * @param {number} size - Brush size in pixels
-     */
-    setBrushSize(size) {
-        this.state.brushSize = size;
+    handleTouchMove: function(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        this.draw({
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
     },
     
-    /**
-     * Select a product template
-     * @param {string} productId - Product template ID
-     */
-    selectProduct(productId) {
-        const template = gameState.getProductTemplate(productId);
-        if (!template) return;
-        
-        this.state.selectedProduct = template;
-        
-        // Show product template on canvas background
-        const productPreview = document.getElementById('productPreview');
-        if (productPreview) {
-            productPreview.innerHTML = `
-                <img src="${template.image}" alt="${template.name}" class="product-template"
-                    style="max-width: 90%; max-height: 90%; opacity: 0.3;">
-            `;
-        }
-        
-        // Clear canvas
-        this.clear();
+    stopDrawing: function() {
+        this.isDrawing = false;
     },
     
-    /**
-     * Save artwork and create a product
-     */
-    saveArtwork() {
-        if (!this.ctx || !this.state.selectedProduct) {
-            Utils.showNotification('Please select a product first');
-            return;
-        }
-        
+    clearCanvas: function() {
+        if (!this.ctx) return;
+        this.ctx.fillStyle = '#FFFFFF';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    },
+    
+    setColor: function(color) {
+        this.currentColor = color;
+    },
+    
+    getCanvasImage: function() {
+        if (!this.canvas) return null;
+        return this.canvas.toDataURL('image/png');
+    },
+    
+    saveArtwork: function() {
+        console.log('Canvas.saveArtwork called');
         try {
-            // Get the art data URL
-            this.state.artDataUrl = this.element.toDataURL('image/png');
+            // Get selected product template
+            const productSelector = document.getElementById('productSelector');
+            const selectedTemplate = productSelector ? productSelector.value : 'mug';
             
-            // Calculate price based on template
-            const basePrice = this.state.selectedProduct.basePrice;
-            const price = basePrice + Utils.randomNumber(5, 15);
+            // Get product template data
+            const template = window.gameState.getProductTemplate(selectedTemplate);
+            if (!template) {
+                console.error('Product template not found');
+                return;
+            }
             
-            // Create the product
-            const newProduct = {
-                templateId: this.state.selectedProduct.id,
-                name: `${this.state.selectedProduct.name} with Custom Art`,
-                price: price,
-                imageUrl: this.state.selectedProduct.image,
-                artUrl: this.state.artDataUrl
+            // Get canvas image
+            const artworkUrl = this.getCanvasImage();
+            if (!artworkUrl) {
+                console.error('Failed to get canvas image');
+                return;
+            }
+            
+            // Create product object
+            const product = {
+                id: 'product-' + Date.now(),
+                templateId: template.id,
+                name: template.name + ' with Custom Art',
+                basePrice: template.basePrice,
+                price: template.basePrice + 5, // Add profit margin
+                imageUrl: template.image,
+                artUrl: artworkUrl,
+                created: new Date().toISOString(),
+                displayed: false
             };
             
-            // Add to inventory
-            const addedProduct = gameState.addToInventory(newProduct);
-            
-            if (addedProduct) {
-                Utils.showNotification(`Created new ${this.state.selectedProduct.name}!`);
-                
-                // Clear canvas
-                this.clear();
-                
-                // Show product preview
-                UI.showProductPreview(addedProduct);
-            }
+            // Show product preview
+            this.showProductPreview(product);
         } catch (error) {
-            console.error('Failed to save artwork:', error);
-            Utils.showNotification('Failed to save artwork');
+            console.error('Error saving artwork:', error);
+            alert('Failed to create product. Please try again.');
         }
     },
     
-    /**
-     * Populate color palette with available colors
-     */
-    populateColorPalette() {
-        const palette = document.getElementById('colorPalette');
-        if (!palette) return;
+    showProductPreview: function(product) {
+        console.log('Showing product preview for:', product);
         
-        palette.innerHTML = '';
+        // Create modal
+        const modal = document.createElement('div');
+        modal.className = 'modal product-preview-modal';
         
-        ProductData.colorPalette.forEach(color => {
-            const swatch = document.createElement('div');
-            swatch.className = 'color-swatch';
-            swatch.style.backgroundColor = color;
-            swatch.setAttribute('data-color', color);
-            
-            if (color === this.state.currentColor) {
-                swatch.classList.add('selected');
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Product Created!</h3>
+                    <button class="close-button">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="product-preview">
+                        <div class="product-image" style="background-image: url('${product.imageUrl}')">
+                            <img src="${product.artUrl}" alt="Custom Art" class="product-art-image">
+                        </div>
+                        <h4>${product.name}</h4>
+                        <p>Price: ${product.price} coins</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="button secondary-button" id="addToInventoryBtn">Add to Inventory</button>
+                    <button class="button accent-button" id="addToShopBtn">Add to Shop</button>
+                </div>
+            </div>
+        `;
+        
+        // Add to document
+        document.body.appendChild(modal);
+        
+        // Close button
+        const closeButton = modal.querySelector('.close-button');
+        closeButton.addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+        
+        // Add to inventory button
+        const addToInventoryBtn = modal.querySelector('#addToInventoryBtn');
+        addToInventoryBtn.addEventListener('click', () => {
+            // Add to inventory
+            if (window.gameState && window.gameState.data && Array.isArray(window.gameState.data.inventory)) {
+                window.gameState.data.inventory.push(product);
+                
+                // Save game
+                if (typeof window.gameState.saveGame === 'function') {
+                    window.gameState.saveGame();
+                }
+                
+                // Update UI
+                if (window.UI && typeof window.UI.renderInventory === 'function') {
+                    window.UI.renderInventory();
+                }
+                
+                // Show notification
+                alert('Product added to inventory!');
+                
+                // Close modal
+                document.body.removeChild(modal);
+            } else {
+                console.error('gameState or inventory not available');
+                alert('Failed to add to inventory. Please try again.');
+            }
+        });
+        
+        // Add to shop button
+        const addToShopBtn = modal.querySelector('#addToShopBtn');
+        addToShopBtn.addEventListener('click', () => {
+            // Find empty display spot
+            let emptySpot = null;
+            if (window.gameState && window.gameState.data && Array.isArray(window.gameState.data.shopDisplays)) {
+                emptySpot = window.gameState.data.shopDisplays.find(spot => !spot.filled);
             }
             
-            palette.appendChild(swatch);
+            if (emptySpot) {
+                // Add to inventory first
+                if (window.gameState && window.gameState.data && Array.isArray(window.gameState.data.inventory)) {
+                    // Add to inventory
+                    window.gameState.data.inventory.push(product);
+                    
+                    // Add to display
+                    if (typeof window.gameState.displayProduct === 'function') {
+                        window.gameState.displayProduct(product.id, emptySpot.id);
+                        
+                        // Save game
+                        if (typeof window.gameState.saveGame === 'function') {
+                            window.gameState.saveGame();
+                        }
+                        
+                        // Update UI
+                        if (window.UI) {
+                            if (typeof window.UI.renderShopDisplays === 'function') {
+                                window.UI.renderShopDisplays();
+                            }
+                            if (typeof window.UI.renderInventory === 'function') {
+                                window.UI.renderInventory();
+                            }
+                        }
+                        
+                        // Show notification
+                        alert('Product added to shop display!');
+                    } else {
+                        console.error('gameState.displayProduct function not available');
+                        alert('Failed to display in shop. Please try again.');
+                    }
+                } else {
+                    console.error('gameState or inventory not available');
+                    alert('Failed to add to inventory. Please try again.');
+                }
+            } else {
+                alert('No empty display spots available! Remove something first.');
+            }
+            
+            // Close modal
+            document.body.removeChild(modal);
         });
-    },
-    
-    /**
-     * Populate product selector with available templates
-     */
-    populateProductSelector() {
-        const selector = document.getElementById('productSelector');
-        if (!selector) return;
-        
-        selector.innerHTML = '';
-        
-        ProductData.templates.forEach(template => {
-            const option = document.createElement('option');
-            option.value = template.id;
-            option.textContent = template.name;
-            selector.appendChild(option);
-        });
-        
-        // Select the first product by default
-        if (ProductData.templates.length > 0 && !this.state.selectedProduct) {
-            this.selectProduct(ProductData.templates[0].id);
-        }
     }
 };
+
+// Ensure Canvas is available globally
+window.Canvas = Canvas;
