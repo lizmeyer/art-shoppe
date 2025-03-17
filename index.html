@@ -804,7 +804,57 @@ window.debugGame = function() {
 setTimeout(window.debugGame, 1000);
 </script>
     
-
+<script>
+// Debug initialization sequence
+(function() {
+  console.log('Debug initialization helper loaded');
+  
+  // Report when UI is initialized
+  const originalUIInit = UI.init;
+  UI.init = function() {
+    console.log('UI.init called');
+    try {
+      const result = originalUIInit.apply(this, arguments);
+      console.log('UI.init completed, result:', result);
+      return result;
+    } catch (error) {
+      console.error('UI.init failed:', error);
+      return false;
+    }
+  };
+  
+  // Report when gameState is initialized
+  if (window.gameState) {
+    if (typeof gameState.init === 'function') {
+      const originalGameStateInit = gameState.init;
+      gameState.init = function() {
+        console.log('gameState.init called');
+        try {
+          const result = originalGameStateInit.apply(this, arguments);
+          console.log('gameState.init completed, result:', result);
+          return result;
+        } catch (error) {
+          console.error('gameState.init failed:', error);
+          return false;
+        }
+      };
+    }
+  } else {
+    console.warn('gameState not found when setting up debug helpers');
+  }
+  
+  // Check initialization status
+  setTimeout(function() {
+    console.group('Initialization Status (after 2s)');
+    console.log('UI exists:', typeof UI !== 'undefined');
+    console.log('UI initialized:', UI.state?.initialized === true);
+    console.log('gameState exists:', typeof gameState !== 'undefined');
+    console.log('gameState data:', gameState?.data ? Object.keys(gameState.data) : 'not available');
+    console.groupEnd();
+  }, 2000);
+})();
+</script>
+    
     
 </body>
 </html>
