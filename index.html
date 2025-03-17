@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Cozy Artist Shop</title>
     
@@ -194,6 +195,278 @@
     <script src="js/gameState.js"></script>
     <script src="js/canvas.js"></script>
     <script src="js/customers.js"></script>
+    <script>
+/**
+ * Emergency gameState implementation
+ * This creates a minimal gameState object with essential functionality
+ */
+console.log('Creating emergency gameState object');
+
+// Create minimal gameState
+window.gameState = {
+  // Core data
+  data: {
+    coins: 100,
+    day: 1,
+    inventory: [],
+    shopDisplays: [],
+    activeCustomers: [],
+    settings: {
+      theme: 'pastel',
+      musicVolume: 50,
+      sfxVolume: 70,
+      tutorialComplete: false
+    }
+  },
+  
+  // Initialize basic game state
+  init() {
+    console.log('Initializing minimal gameState');
+    
+    // Create shop displays if empty
+    if (!this.data.shopDisplays.length) {
+      this.initializeShopDisplays();
+    }
+    
+    // Load saved data if available
+    this.loadGame();
+    
+    return true;
+  },
+  
+  // Initialize shop displays
+  initializeShopDisplays() {
+    console.log('Creating shop displays');
+    this.data.shopDisplays = Array(6).fill(null).map((_, i) => ({
+      id: `display-${i}`,
+      productId: null,
+      filled: false
+    }));
+  },
+  
+  // Save game to localStorage
+  saveGame() {
+    try {
+      localStorage.setItem('cozyArtistShop', JSON.stringify(this.data));
+      return true;
+    } catch (error) {
+      console.error('Failed to save game:', error);
+      return false;
+    }
+  },
+  
+  // Load game from localStorage
+  loadGame() {
+    try {
+      const savedData = localStorage.getItem('cozyArtistShop');
+      if (savedData) {
+        const parsed = JSON.parse(savedData);
+        Object.keys(parsed).forEach(key => {
+          if (this.data.hasOwnProperty(key)) {
+            this.data[key] = parsed[key];
+          }
+        });
+      }
+      return true;
+    } catch (error) {
+      console.error('Failed to load game:', error);
+      return false;
+    }
+  },
+  
+  // Display a product in the shop
+  displayProduct(productId, displayId) {
+    try {
+      // Find product in inventory
+      const productIndex = this.data.inventory.findIndex(p => p.id === productId);
+      if (productIndex === -1) return false;
+      
+      // Find display
+      const displayIndex = this.data.shopDisplays.findIndex(d => d.id === displayId);
+      if (displayIndex === -1) return false;
+      
+      // Update display
+      this.data.shopDisplays[displayIndex].productId = productId;
+      this.data.shopDisplays[displayIndex].filled = true;
+      
+      // Mark product as displayed
+      this.data.inventory[productIndex].displayed = true;
+      
+      return true;
+    } catch (error) {
+      console.error('Error displaying product:', error);
+      return false;
+    }
+  },
+  
+  // Remove from display
+  removeFromDisplay(displayId) {
+    try {
+      // Find display
+      const displayIndex = this.data.shopDisplays.findIndex(d => d.id === displayId);
+      if (displayIndex === -1) return false;
+      
+      // Get product ID
+      const productId = this.data.shopDisplays[displayIndex].productId;
+      
+      // Reset display
+      this.data.shopDisplays[displayIndex].productId = null;
+      this.data.shopDisplays[displayIndex].filled = false;
+      
+      // Update product in inventory
+      if (productId) {
+        const productIndex = this.data.inventory.findIndex(p => p.id === productId);
+        if (productIndex !== -1) {
+          this.data.inventory[productIndex].displayed = false;
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error removing from display:', error);
+      return false;
+    }
+  },
+  
+  // Sell a product
+  sellProduct(productId, price) {
+    try {
+      // Find product
+      const productIndex = this.data.inventory.findIndex(p => p.id === productId);
+      if (productIndex === -1) return false;
+      
+      // Check if product is on display
+      const displayIndex = this.data.shopDisplays.findIndex(d => d.productId === productId);
+      
+      // Remove from display if displayed
+      if (displayIndex !== -1) {
+        this.data.shopDisplays[displayIndex].productId = null;
+        this.data.shopDisplays[displayIndex].filled = false;
+      }
+      
+      // Add coins
+      this.data.coins += price;
+      
+      // Remove from inventory
+      this.data.inventory.splice(productIndex, 1);
+      
+      return true;
+    } catch (error) {
+      console.error('Error selling product:', error);
+      return false;
+    }
+  },
+  
+  // Start new day
+  startNewDay() {
+    try {
+      this.data.day += 1;
+      
+      // Clear active customers
+      this.data.activeCustomers = [];
+      
+      return this.data.day;
+    } catch (error) {
+      console.error('Error starting new day:', error);
+      return this.data.day;
+    }
+  },
+  
+  // Get product template
+  getProductTemplate(templateId) {
+    const templates = {
+      'mug': { 
+        id: 'mug',
+        name: 'Mug', 
+        basePrice: 8,
+        image: 'assets/images/products/mug.png',
+        artPosition: { x: 70, y: 70, width: 120, height: 120, rotation: 0 }
+      },
+      'tote': { 
+        id: 'tote',
+        name: 'Tote Bag', 
+        basePrice: 12,
+        image: 'assets/images/products/tote.png',
+        artPosition: { x: 60, y: 50, width: 140, height: 140, rotation: 0 }
+      },
+      'shirt': { 
+        id: 'shirt',
+        name: 'T-Shirt', 
+        basePrice: 15,
+        image: 'assets/images/products/tshirt.png',
+        artPosition: { x: 75, y: 60, width: 110, height: 110, rotation: 0 }
+      },
+      'poster': { 
+        id: 'poster',
+        name: 'Poster', 
+        basePrice: 10,
+        image: 'assets/images/products/poster.png',
+        artPosition: { x: 40, y: 40, width: 180, height: 180, rotation: 0 }
+      }
+    };
+    
+    return templates[templateId] || templates['mug'];
+  },
+  
+  // Get displayed products
+  getDisplayedProducts() {
+    return this.data.shopDisplays
+      .filter(display => display.filled)
+      .map(display => {
+        const product = this.data.inventory.find(p => p.id === display.productId);
+        return {
+          displayId: display.id,
+          product: product
+        };
+      });
+  }
+};
+
+// Product and customer data
+window.ProductData = {
+  templates: [
+    { id: 'mug', name: 'Mug', basePrice: 8, image: 'assets/images/products/mug.png' },
+    { id: 'tote', name: 'Tote Bag', basePrice: 12, image: 'assets/images/products/tote.png' },
+    { id: 'shirt', name: 'T-Shirt', basePrice: 15, image: 'assets/images/products/tshirt.png' },
+    { id: 'poster', name: 'Poster', basePrice: 10, image: 'assets/images/products/poster.png' }
+  ],
+  colorPalette: [
+    '#FF5252', '#FF9800', '#FFEB3B', '#4CAF50', '#2196F3', 
+    '#9C27B0', '#F06292', '#795548', '#607D8B', '#000000', '#FFFFFF'
+  ]
+};
+
+window.CustomerData = {
+  types: [
+    {
+      type: 'trendy',
+      avatar: 'assets/images/customers/trendy.png',
+      preferences: { products: ['tote', 'shirt'] },
+      budget: { min: 15, max: 25 },
+      patience: 15
+    },
+    {
+      type: 'artsy',
+      avatar: 'assets/images/customers/artsy.png',
+      preferences: { products: ['poster', 'mug'] },
+      budget: { min: 10, max: 20 },
+      patience: 20
+    },
+    {
+      type: 'casual',
+      avatar: 'assets/images/customers/casual.png',
+      preferences: { products: ['mug', 'tote', 'shirt', 'poster'] },
+      budget: { min: 8, max: 18 },
+      patience: 12
+    }
+  ]
+};
+
+// Initialize immediately to ensure it's ready
+gameState.init();
+console.log('Emergency gameState initialized successfully');
+</script>
+    
     <script src="js/ui.js"></script>
     <script src="js/main.js"></script>
     <script>
@@ -852,6 +1125,97 @@ setTimeout(window.debugGame, 1000);
     console.log('gameState data:', gameState?.data ? Object.keys(gameState.data) : 'not available');
     console.groupEnd();
   }, 2000);
+})();
+</script>
+
+    <script>
+// Force UI initialization and hide loading screen
+(function() {
+  // Function to ensure UI is initialized
+  function ensureUIInitialized() {
+    console.log('Ensuring UI is initialized');
+    
+    if (typeof UI === 'undefined') {
+      console.error('UI object not found - unable to proceed');
+      showErrorMessage('UI system not loaded properly');
+      return false;
+    }
+    
+    try {
+      // Initialize UI if needed
+      if (!UI.state || !UI.state.initialized) {
+        console.log('UI not initialized, initializing now');
+        UI.init();
+      }
+      
+      // Force UI to update
+      if (typeof UI.updateAllUI === 'function') {
+        UI.updateAllUI();
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error initializing UI:', error);
+      showErrorMessage('Failed to initialize UI: ' + error.message);
+      return false;
+    }
+  }
+  
+  // Function to hide loading screen
+  function hideLoadingScreen() {
+    console.log('Forcing loading screen to hide');
+    
+    const loadingScreen = document.getElementById('loadingScreen');
+    if (loadingScreen) {
+      loadingScreen.style.display = 'none';
+      loadingScreen.classList.add('hidden');
+    }
+    
+    const gameContainer = document.getElementById('gameContainer');
+    if (gameContainer) {
+      gameContainer.style.display = 'flex';
+      gameContainer.classList.remove('hidden');
+    }
+  }
+  
+  // Function to show error message
+  function showErrorMessage(message) {
+    console.error(message);
+    
+    const errorScreen = document.getElementById('errorScreen');
+    const errorMessage = document.getElementById('errorMessage');
+    
+    if (errorScreen && errorMessage) {
+      errorMessage.textContent = message;
+      errorScreen.style.display = 'flex';
+      errorScreen.classList.remove('hidden');
+    } else {
+      alert('Game Error: ' + message);
+    }
+    
+    // Hide loading screen in any case
+    hideLoadingScreen();
+  }
+  
+  // Wait a short time to ensure scripts are loaded
+  setTimeout(function() {
+    // Ensure gameState exists
+    if (typeof gameState === 'undefined' || !gameState.data) {
+      console.error('gameState object not found or invalid');
+      showErrorMessage('Game state system not loaded properly');
+      hideLoadingScreen();
+      return;
+    }
+    
+    // Initialize UI
+    if (ensureUIInitialized()) {
+      console.log('Game initialized successfully');
+      hideLoadingScreen();
+    } else {
+      console.error('Game initialization failed');
+      hideLoadingScreen();
+    }
+  }, 1000);
 })();
 </script>
     
