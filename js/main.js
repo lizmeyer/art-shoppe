@@ -2,6 +2,16 @@
  * Main application controller for Cozy Artist Shop
  */
 
+// Add this to the beginning of your main.js
+window.addEventListener('error', function(e) {
+  if (e.message && e.message.includes('runtime.lastError')) {
+    e.stopPropagation();
+    console.warn('Runtime error intercepted:', e.message);
+    // Prevent it from breaking your game
+    return true;
+  }
+});
+
 // Initialize the game when DOM is loaded
 document.addEventListener('DOMContentLoaded', initializeGame);
 
