@@ -66,6 +66,9 @@ const UI = {
             this.updateDayDisplay();
             this.updateTheme();
             
+            // Debug product templates
+            this.debugProductTemplates();
+            
             // Mark as initialized
             this.state.initialized = true;
             
@@ -212,10 +215,8 @@ const UI = {
                     break;
                     
                 case 'studioView':
-                    // Make sure color palette and canvas are set up
-                    if (this.elements.colorPalette && !this.elements.colorPalette.children.length) {
-                        this.renderColorPalette();
-                    }
+                    // Initialize studio view
+                    this.initializeStudioView();
                     break;
                     
                 case 'inventoryView':
@@ -228,6 +229,124 @@ const UI = {
             }
         } catch (error) {
             console.error('Error updating view content:', error, viewName);
+        }
+    },
+    
+    /**
+     * Initialize the Studio view
+     */
+    initializeStudioView() {
+        try {
+            console.log('Initializing Studio view');
+            
+            // Get the product selector
+            const productSelector = document.getElementById('productSelector');
+            if (!productSelector) {
+                console.error('Product selector not found');
+                return;
+            }
+            
+            // Clear existing options
+            productSelector.innerHTML = '';
+            
+            // Get product templates
+            let templates = [];
+            if (window.ProductData && Array.isArray(window.ProductData.templates)) {
+                templates = window.ProductData.templates;
+            } else {
+                // Fallback templates if ProductData is not available
+                templates = [
+                    { id: 'mug', name: 'Mug', basePrice: 8 },
+                    { id: 'tote', name: 'Tote Bag', basePrice: 12 },
+                    { id: 'shirt', name: 'T-Shirt', basePrice: 15 },
+                    { id: 'poster', name: 'Poster', basePrice: 10 }
+                ];
+            }
+            
+            console.log('Adding product templates to selector:', templates.length);
+            
+            // Add options to selector
+            templates.forEach(template => {
+                const option = document.createElement('option');
+                option.value = template.id;
+                option.textContent = template.name;
+                productSelector.appendChild(option);
+            });
+            
+            // Add change event listener
+            this.addSafeEventListener(productSelector, 'change', () => {
+                this.updateProductPreview(productSelector.value);
+            });
+            
+            // Initialize with first product
+            if (templates.length > 0) {
+                this.updateProductPreview(templates[0].id);
+            }
+            
+            // Initialize color palette if needed
+            this.renderColorPalette();
+            
+            console.log('Studio view initialized');
+            return true;
+        } catch (error) {
+            console.error('Error initializing Studio view:', error);
+            return false;
+        }
+    },
+    
+    /**
+     * Update product preview based on selection
+     */
+    updateProductPreview(productId) {
+        try {
+            console.log('Updating product preview for:', productId);
+            
+            // Get product preview element
+            const previewElement = document.getElementById('productPreview');
+            if (!previewElement) {
+                console.error('Product preview element not found');
+                return;
+            }
+            
+            // Get product template
+            const template = this.getProductTemplate(productId);
+            if (!template) {
+                console.error('Product template not found for:', productId);
+                return;
+            }
+            
+            // Update preview
+            previewElement.innerHTML = '';
+            
+            // Create product image
+            const productImg = document.createElement('img');
+            productImg.src = template.image || `assets/images/products/${productId}.png`;
+            productImg.alt = template.name;
+            productImg.className = 'product-preview-image';
+            productImg.style.maxWidth = '100%';
+            productImg.style.maxHeight = '100%';
+            
+            // Add to preview
+            previewElement.appendChild(productImg);
+            
+            // Add art placement area if available
+            if (template.artPosition) {
+                const artArea = document.createElement('div');
+                artArea.className = 'art-placement-area';
+                artArea.style.position = 'absolute';
+                artArea.style.top = `${template.artPosition.y}px`;
+                artArea.style.left = `${template.artPosition.x}px`;
+                artArea.style.width = `${template.artPosition.width}px`;
+                artArea.style.height = `${template.artPosition.height}px`;
+                artArea.style.border = '1px dashed rgba(0, 0, 0, 0.3)';
+                artArea.style.pointerEvents = 'none';
+                
+                previewElement.appendChild(artArea);
+            }
+            
+            console.log('Product preview updated');
+        } catch (error) {
+            console.error('Error updating product preview:', error);
         }
     },
     
@@ -788,619 +907,647 @@ const UI = {
                     e.dataTransfer.setData('product-id', product.id);
                 });
                 
-                // Add display button handler
-                const displayButton = itemElement.querySelector('.display-button');
-                if (displayButton) {
-                    displayButton.addEventListener('click', () => {
-                        this.showDisplaySelection(product.id);
-                    });
-                }
-                
-                container.appendChild(itemElement);
-            });
-            
-            console.log('Inventory rendered');
-        } catch (error) {
-            console.error('Error rendering inventory:', error);
-        }
-    },
-    
-    /**
-     * Show display selection dialog
-     */
-    showDisplaySelection(productId) {
-        try {
-            // Check if game state is available
-            if (!window.gameState || !window.gameState.data || !Array.isArray(window.gameState.data.shopDisplays)) {
-                this.showNotification('Shop displays not available');
-                return;
-            }
-            
-            // Find empty displays
-            const emptyDisplays = window.gameState.data.shopDisplays.filter(d => !d.filled);
-            
-            if (emptyDisplays.length === 0) {
-                this.showNotification('No empty display spots available');
-                return;
-            }
-            
-            // Create modal
-            const modal = document.createElement('div');
-            modal.className = 'modal display-selection-modal';
-            modal.style.position = 'fixed';
-            modal.style.top = '0';
-            modal.style.left = '0';
-            modal.style.width = '100%';
-            modal.style.height = '100%';
-            modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-            modal.style.display = 'flex';
-            modal.style.justifyContent = 'center';
-            modal.style.alignItems = 'center';
-            modal.style.zIndex = '1000';
-            
-            // Create display options
-            let optionsHTML = '';
-            emptyDisplays.forEach(display => {
-                optionsHTML += `
-                    <div class="display-option" data-display-id="${display.id}" style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; cursor: pointer; text-align: center;">
-                        Display Spot ${display.id.split('-')[1]}
-                    </div>
-                `;
-            });
-            
-            modal.innerHTML = `
-                <div class="modal-content" style="background-color: #ffeef2; border-radius: 15px; padding: 20px; max-width: 90%; width: 400px;">
-                    <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h3 style="margin: 0;">Choose Display Location</h3>
-                        <button class="close-button" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Select where to display your product:</p>
-                        <div class="display-options" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px;">
-                            ${optionsHTML}
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Add to document
-            document.body.appendChild(modal);
-            
-            // Add close button handler
-            modal.querySelector('.close-button').addEventListener('click', () => {
-                document.body.removeChild(modal);
-            });
-            
-            // Add display option handlers
-            modal.querySelectorAll('.display-option').forEach(option => {
-                option.addEventListener('click', () => {
-                    const displayId = option.getAttribute('data-display-id');
-                    
-                    if (typeof window.gameState.displayProduct === 'function') {
-                        window.gameState.displayProduct(productId, displayId);
-                        this.renderShopDisplays();
-                        this.renderInventory();
-                    }
-                    
-                    document.body.removeChild(modal);
-                });
-                
-                // Add hover effect
-                option.addEventListener('mouseenter', () => {
-                    option.style.backgroundColor = '#ffb0c8';
-                    option.style.color = 'white';
-                });
-                
-                option.addEventListener('mouseleave', () => {
-                    option.style.backgroundColor = '#f9f9f9';
-                    option.style.color = 'inherit';
-                });
-            });
-        } catch (error) {
-            console.error('Error showing display selection:', error);
-            this.showNotification('Error showing display options');
-        }
-    },
-    
-    /**
-     * Render customers
-     */
-    renderCustomers() {
-        try {
-            const container = this.elements.customerArea;
-            if (!container) return;
-            
-            container.innerHTML = '';
-            
-            // Check if customers exist
-            if (!window.gameState || !window.gameState.data || !Array.isArray(window.gameState.data.activeCustomers)) {
-                container.innerHTML = '<div class="no-customers">Customer data not available</div>';
-                return;
-            }
-            
-            // Check if there are no customers
-            if (window.gameState.data.activeCustomers.length === 0) {
-                container.innerHTML = '<div class="no-customers">No customers yet. Add products to your displays!</div>';
-                return;
-            }
-            
-            // Render each customer
-            window.gameState.data.activeCustomers.forEach(customer => {
-                const customerElement = document.createElement('div');
-                customerElement.className = 'customer';
-                customerElement.setAttribute('data-id', customer.id);
-                
-                // Calculate patience percentage
-                const timeElapsed = (Date.now() - customer.enteredAt) / 1000;
-                const patiencePercentage = Math.max(0, Math.min(100, 100 - (timeElapsed / customer.patience * 100)));
-                
-                customerElement.innerHTML = `
-                    <img src="${customer.avatar}" alt="${customer.type}" class="customer-avatar">
-                    <div class="customer-speech-bubble">
-                        <p>I'm looking for something nice!</p>
-                    </div>
-                    <div class="patience-bar">
-                        <div class="patience-fill" style="width: ${patiencePercentage}%;"></div>
-                    </div>
-                `;
-                
-                // Add click handler
-                customerElement.addEventListener('click', () => {
-                    if (typeof window.Customers !== 'undefined' && 
-                        typeof window.Customers.showPreferences === 'function') {
-                        window.Customers.showPreferences(customer);
-                    } else {
-                        this.showSimpleCustomerPreferences(customer);
-                    }
-                });
-                
-                container.appendChild(customerElement);
-            });
-            
-            console.log('Customers rendered');
-        } catch (error) {
-            console.error('Error rendering customers:', error);
-        }
-    },
-    
-    /**
-     * Show simple customer preferences
-     */
-    showSimpleCustomerPreferences(customer) {
-        try {
-            // Create modal
-            const modal = document.createElement('div');
-            modal.className = 'modal customer-preferences-modal';
-            modal.style.position = 'fixed';
-            modal.style.top = '0';
-            modal.style.left = '0';
-            modal.style.width = '100%';
-            modal.style.height = '100%';
-            modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-            modal.style.display = 'flex';
-            modal.style.justifyContent = 'center';
-            modal.style.alignItems = 'center';
-            modal.style.zIndex = '1000';
-            
-            // Get displayed products
-            const displayedProducts = window.gameState.data.shopDisplays
-                .filter(display => display.filled)
-                .map(display => {
-                    const product = window.gameState.data.inventory.find(p => p.id === display.productId);
-                    return {
-                        display,
-                        product
-                    };
-                })
-                .filter(item => item.product);
-            
-            // Create product list
-            let productsHTML = '';
-            if (displayedProducts.length > 0) {
-                displayedProducts.forEach(item => {
-                    productsHTML += `
-                        <div class="product-item" data-product-id="${item.product.id}" data-display-id="${item.display.id}" style="display: flex; align-items: center; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; cursor: pointer;">
-                            <img src="${item.product.imageUrl}" alt="${item.product.name}" style="width: 50px; height: 50px; margin-right: 10px;">
-                            <div>
-                                <div>${item.product.name}</div>
-                                <div>${item.product.price} coins</div>
-                            </div>
-                        </div>
-                    `;
-                });
-            } else {
-                productsHTML = '<p>No products on display yet.</p>';
-            }
-            
-            modal.innerHTML = `
-                <div class="modal-content" style="background-color: #ffeef2; border-radius: 15px; padding: 20px; max-width: 90%; width: 400px;">
-                    <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h3 style="margin: 0;">Customer Preferences</h3>
-                        <button class="close-button" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="customer-info" style="display: flex; margin-bottom: 20px;">
-                            <img src="${customer.avatar}" alt="${customer.type}" style="width: 80px; height: 80px; margin-right: 15px;">
-                            <div>
-                                <p>Type: ${customer.type.charAt(0).toUpperCase() + customer.type.slice(1)}</p>
-                                <p>Budget: ${customer.budget} coins</p>
-                            </div>
-                        </div>
-                        <h4>Available Products:</h4>
-                        <div class="product-list">
-                            ${productsHTML}
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Add to document
-            document.body.appendChild(modal);
-            
-            // Add close button handler
-            modal.querySelector('.close-button').addEventListener('click', () => {
-                document.body.removeChild(modal);
-            });
-            
-            // Add product selection handlers
-            modal.querySelectorAll('.product-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    const productId = item.getAttribute('data-product-id');
-                    const displayId = item.getAttribute('data-display-id');
-                    const product = window.gameState.data.inventory.find(p => p.id === productId);
-                    
-                    if (product) {
-                        // Check if customer can afford it
-                        if (product.price <= customer.budget) {
-                            // Try to sell product
-                            if (typeof window.gameState.sellProduct === 'function') {
-                                window.gameState.sellProduct(productId, product.price);
-                                
-                                // Update UI
-                                this.updateCoinDisplay();
-                                this.renderShopDisplays();
-                                this.renderInventory();
-                                
-                                // Remove customer from active customers
-                                window.gameState.data.activeCustomers = window.gameState.data.activeCustomers.filter(c => c.id !== customer.id);
-                                this.renderCustomers();
-                                
-                                this.showNotification(`${customer.type} customer bought ${product.name} for ${product.price} coins!`);
-                            }
-                        } else {
-                            this.showNotification(`${customer.type} customer can't afford this item!`);
-                        }
-                    }
-                    
-                    document.body.removeChild(modal);
-                });
-                
-                // Add hover effect
-                item.addEventListener('mouseenter', () => {
-                    item.style.backgroundColor = '#ffe6ec';
-                });
-                
-                item.addEventListener('mouseleave', () => {
-                    item.style.backgroundColor = 'transparent';
-                });
-            });
-        } catch (error) {
-            console.error('Error showing customer preferences:', error);
-            this.showNotification('Error showing customer preferences');
-        }
-    },
-    
-    /**
-     * Update theme
-     */
-    updateTheme() {
-        try {
-            const theme = window.gameState?.data?.settings?.theme || 'pastel';
-            document.body.setAttribute('data-theme', theme);
-            
-            console.log('Theme updated:', theme);
-        } catch (error) {
-            console.error('Error updating theme:', error);
-        }
-    },
-    
-    /**
-     * Update settings UI
-     */
-    updateSettingsUI() {
-        try {
-            // Find settings elements
-            const musicVolume = document.getElementById('musicVolume');
-            const sfxVolume = document.getElementById('sfxVolume');
-            const themeButtons = document.querySelectorAll('.theme-button');
-            
-            // Update them if they exist
-            if (musicVolume && window.gameState?.data?.settings) {
-                musicVolume.value = window.gameState.data.settings.musicVolume || 50;
-            }
-            
-            if (sfxVolume && window.gameState?.data?.settings) {
-                sfxVolume.value = window.gameState.data.settings.sfxVolume || 70;
-            }
-            
-            if (themeButtons.length && window.gameState?.data?.settings) {
-                themeButtons.forEach(button => {
-                    const buttonTheme = button.getAttribute('data-theme');
-                    button.classList.toggle('active', buttonTheme === window.gameState.data.settings.theme);
-                });
-            }
-            
-            console.log('Settings UI updated');
-        } catch (error) {
-            console.error('Error updating settings UI:', error);
-        }
-    },
-    
-    /**
-     * Start a new day
-     */
-    startNewDay() {
-        try {
-            if (!window.gameState || typeof window.gameState.startNewDay !== 'function') {
-                this.showNotification('Cannot start new day');
-                return;
-            }
-            
-            const newDay = window.gameState.startNewDay();
-            
-            // Update UI
-            this.updateDayDisplay();
-            this.renderCustomers();
-            
-            this.showNotification(`Day ${newDay} has begun!`);
-        } catch (error) {
-            console.error('Error starting new day:', error);
-            this.showNotification('Error starting new day');
-        }
-    },
-    
-    /**
-     * Update coin display
-     */
-    updateCoinDisplay() {
-        try {
-            if (this.elements.coinDisplay && window.gameState?.data) {
-                this.elements.coinDisplay.textContent = window.gameState.data.coins || 0;
-            }
-        } catch (error) {
-            console.error('Error updating coin display:', error);
-        }
-    },
-    
-    /**
-     * Update day display
-     */
-    updateDayDisplay() {
-        try {
-            if (this.elements.dayDisplay && window.gameState?.data) {
-                this.elements.dayDisplay.textContent = window.gameState.data.day || 1;
-            }
-        } catch (error) {
-            console.error('Error updating day display:', error);
-        }
-    },
-    
-    /**
-     * Show notification
-     */
-    showNotification(message, duration = 3000) {
-        try {
-            // Check if we already have a notification element
-            let notification = document.getElementById('notification');
-            
-            // Create one if it doesn't exist
-            if (!notification) {
-                notification = document.createElement('div');
-                notification.id = 'notification';
-                notification.style.position = 'fixed';
-                notification.style.top = '80px';
-                notification.style.left = '50%';
-                notification.style.transform = 'translateX(-50%)';
-                notification.style.backgroundColor = '#ffffff';
-                notification.style.color = '#333333';
-                notification.style.padding = '10px 20px';
-                notification.style.borderRadius = '20px';
-                notification.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
-                notification.style.zIndex = '1000';
-                notification.style.transition = 'opacity 0.3s, transform 0.3s';
-                notification.style.opacity = '0';
-                
-                document.body.appendChild(notification);
-            }
-            
-            // Update message
-            notification.textContent = message;
-            
-            // Show notification
-            notification.style.opacity = '1';
-            notification.style.transform = 'translateX(-50%) translateY(0)';
-            
-            // Hide after duration
-            clearTimeout(this.state.lastNotification);
-            this.state.lastNotification = setTimeout(() => {
-                notification.style.opacity = '0';
-                notification.style.transform = 'translateX(-50%) translateY(-10px)';
-            }, duration);
-            
-            console.log('Notification shown:', message);
-        } catch (error) {
-            console.error('Error showing notification:', error);
-        }
-    },
-    
-    /**
-     * Update all UI elements
-     */
-    updateAllUI() {
-        this.updateCoinDisplay();
-        this.updateDayDisplay();
-        this.updateTheme();
-        this.renderShopDisplays();
-        this.renderInventory();
-        this.renderCustomers();
-        this.updateSettingsUI();
-    },
-    
-    /**
-     * Show error
-     */
-    showError(message) {
-        console.error('Game Error:', message);
-        
-        // Find error elements
-        const errorScreen = this.elements.errorScreen;
-        const errorMessage = document.getElementById('errorMessage');
-        
-        // Show error screen if available
-        if (errorScreen && errorMessage) {
-            errorMessage.textContent = message;
-            errorScreen.classList.remove('hidden');
-            
-            // Hide loading and game
-            if (this.elements.loadingScreen) {
-                this.elements.loadingScreen.classList.add('hidden');
-            }
-            
-            if (this.elements.gameContainer) {
-                this.elements.gameContainer.classList.add('hidden');
-            }
-        } else {
-            // Fallback to alert
-            alert('Game Error: ' + message);
-        }
-    },
-    
-    /**
-     * Helper: Get view key from name
-     */
-    getViewKey(viewName) {
-        const keyMap = {
-            'shopView': 'shop',
-            'studioView': 'studio',
-            'inventoryView': 'inventory',
-            'settingsView': 'settings'
-        };
-        
-        return keyMap[viewName] || viewName;
-    },
-    
-    /**
-     * Helper: Safely get element by selector
-     */
-    getElement(selector) {
-        try {
-            // Try query selector first (more flexible)
-            const element = document.querySelector(selector);
-            
-            // If not found, try getElementById if selector looks like an ID
-            if (!element && selector.startsWith('#')) {
-                return document.getElementById(selector.substring(1));
-            }
-            
-            return element;
-        } catch (error) {
-            console.warn(`Error getting element ${selector}:`, error);
-            return null;
-        }
-    },
-    
-    /**
-     * Helper: Find button by text content
-     */
-    findButtonByText(text) {
-        try {
-            return Array.from(document.querySelectorAll('button'))
-                .find(btn => btn.textContent.trim() === text);
-        } catch (error) {
-            console.warn(`Error finding button with text "${text}":`, error);
-            return null;
-        }
-    },
-    
-    /**
-     * Helper: Add safe event listener
-     */
-    addSafeEventListener(element, event, callback) {
-        if (!element) return;
-        
-        try {
-            element.addEventListener(event, callback);
-        } catch (error) {
-            console.warn(`Error adding ${event} listener:`, error);
-        }
-    },
-    
-    /**
-     * Helper: Get product template
-     */
-    getProductTemplate(templateId) {
-        if (window.gameState && typeof window.gameState.getProductTemplate === 'function') {
-            return window.gameState.getProductTemplate(templateId);
-        }
-        
-        // Fallback templates
-        const templates = {
-            'mug': { 
-                id: 'mug',
-                name: 'Mug', 
-                basePrice: 8,
-                artPosition: { x: 70, y: 70, width: 120, height: 120, rotation: 0 }
-            },
-            'tote': { 
-                id: 'tote',
-                name: 'Tote Bag', 
-                basePrice: 12,
-                artPosition: { x: 60, y: 50, width: 140, height: 140, rotation: 0 }
-            },
-            'shirt': { 
-                id: 'shirt',
-                name: 'T-Shirt', 
-                basePrice: 15,
-                artPosition: { x: 75, y: 60, width: 110, height: 110, rotation: 0 }
-            },
-            'poster': { 
-                id: 'poster',
-                name: 'Poster', 
-                basePrice: 10,
-                artPosition: { x: 40, y: 40, width: 180, height: 180, rotation: 0 }
-            }
-        };
-        
-        return templates[templateId] || templates['mug'];
-    },
-    
-    /**
-     * Helper: Get product base price
-     */
-    getProductBasePrice(productType) {
-        const prices = {
-            'mug': 8,
-            'tote': 12,
-            'shirt': 15,
-            'poster': 10
-        };
-        
-        return prices[productType] || 10;
-    },
-    
-    /**
-     * Helper: Get product display name
-     */
-    getProductDisplayName(productType) {
-        const names = {
-            'mug': 'Mug with Custom Art',
-            'tote': 'Tote Bag with Custom Art',
-            'shirt': 'T-Shirt with Custom Art',
-            'poster': 'Poster with Custom Art'
-        };
-        
-        return names[productType] || 'Custom Product';
-    }
+                //
+                    // Add display button handler
+               const displayButton = itemElement.querySelector('.display-button');
+               if (displayButton) {
+                   displayButton.addEventListener('click', () => {
+                       this.showDisplaySelection(product.id);
+                   });
+               }
+               
+               container.appendChild(itemElement);
+           });
+           
+           console.log('Inventory rendered');
+       } catch (error) {
+           console.error('Error rendering inventory:', error);
+       }
+   },
+   
+   /**
+    * Show display selection dialog
+    */
+   showDisplaySelection(productId) {
+       try {
+           // Check if game state is available
+           if (!window.gameState || !window.gameState.data || !Array.isArray(window.gameState.data.shopDisplays)) {
+               this.showNotification('Shop displays not available');
+               return;
+           }
+           
+           // Find empty displays
+           const emptyDisplays = window.gameState.data.shopDisplays.filter(d => !d.filled);
+           
+           if (emptyDisplays.length === 0) {
+               this.showNotification('No empty display spots available');
+               return;
+           }
+           
+           // Create modal
+           const modal = document.createElement('div');
+           modal.className = 'modal display-selection-modal';
+           modal.style.position = 'fixed';
+           modal.style.top = '0';
+           modal.style.left = '0';
+           modal.style.width = '100%';
+           modal.style.height = '100%';
+           modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+           modal.style.display = 'flex';
+           modal.style.justifyContent = 'center';
+           modal.style.alignItems = 'center';
+           modal.style.zIndex = '1000';
+           
+           // Create display options
+           let optionsHTML = '';
+           emptyDisplays.forEach(display => {
+               optionsHTML += `
+                   <div class="display-option" data-display-id="${display.id}" style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; cursor: pointer; text-align: center;">
+                       Display Spot ${display.id.split('-')[1]}
+                   </div>
+               `;
+           });
+           
+           modal.innerHTML = `
+               <div class="modal-content" style="background-color: #ffeef2; border-radius: 15px; padding: 20px; max-width: 90%; width: 400px;">
+                   <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                       <h3 style="margin: 0;">Choose Display Location</h3>
+                       <button class="close-button" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+                   </div>
+                   <div class="modal-body">
+                       <p>Select where to display your product:</p>
+                       <div class="display-options" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px;">
+                           ${optionsHTML}
+                       </div>
+                   </div>
+               </div>
+           `;
+           
+           // Add to document
+           document.body.appendChild(modal);
+           
+           // Add close button handler
+           modal.querySelector('.close-button').addEventListener('click', () => {
+               document.body.removeChild(modal);
+           });
+           
+           // Add display option handlers
+           modal.querySelectorAll('.display-option').forEach(option => {
+               option.addEventListener('click', () => {
+                   const displayId = option.getAttribute('data-display-id');
+                   
+                   if (typeof window.gameState.displayProduct === 'function') {
+                       window.gameState.displayProduct(productId, displayId);
+                       this.renderShopDisplays();
+                       this.renderInventory();
+                   }
+                   
+                   document.body.removeChild(modal);
+               });
+               
+               // Add hover effect
+               option.addEventListener('mouseenter', () => {
+                   option.style.backgroundColor = '#ffb0c8';
+                   option.style.color = 'white';
+               });
+               
+               option.addEventListener('mouseleave', () => {
+                   option.style.backgroundColor = '#f9f9f9';
+                   option.style.color = 'inherit';
+               });
+           });
+       } catch (error) {
+           console.error('Error showing display selection:', error);
+           this.showNotification('Error showing display options');
+       }
+   },
+   
+   /**
+    * Render customers
+    */
+   renderCustomers() {
+       try {
+           const container = this.elements.customerArea;
+           if (!container) return;
+           
+           container.innerHTML = '';
+           
+           // Check if customers exist
+           if (!window.gameState || !window.gameState.data || !Array.isArray(window.gameState.data.activeCustomers)) {
+               container.innerHTML = '<div class="no-customers">Customer data not available</div>';
+               return;
+           }
+           
+           // Check if there are no customers
+           if (window.gameState.data.activeCustomers.length === 0) {
+               container.innerHTML = '<div class="no-customers">No customers yet. Add products to your displays!</div>';
+               return;
+           }
+           
+           // Render each customer
+           window.gameState.data.activeCustomers.forEach(customer => {
+               const customerElement = document.createElement('div');
+               customerElement.className = 'customer';
+               customerElement.setAttribute('data-id', customer.id);
+               
+               // Calculate patience percentage
+               const timeElapsed = (Date.now() - customer.enteredAt) / 1000;
+               const patiencePercentage = Math.max(0, Math.min(100, 100 - (timeElapsed / customer.patience * 100)));
+               
+               customerElement.innerHTML = `
+                   <img src="${customer.avatar}" alt="${customer.type}" class="customer-avatar">
+                   <div class="customer-speech-bubble">
+                       <p>I'm looking for something nice!</p>
+                   </div>
+                   <div class="patience-bar">
+                       <div class="patience-fill" style="width: ${patiencePercentage}%;"></div>
+                   </div>
+               `;
+               
+               // Add click handler
+               customerElement.addEventListener('click', () => {
+                   if (typeof window.Customers !== 'undefined' && 
+                       typeof window.Customers.showPreferences === 'function') {
+                       window.Customers.showPreferences(customer);
+                   } else {
+                       this.showSimpleCustomerPreferences(customer);
+                   }
+               });
+               
+               container.appendChild(customerElement);
+           });
+           
+           console.log('Customers rendered');
+       } catch (error) {
+           console.error('Error rendering customers:', error);
+       }
+   },
+   
+   /**
+    * Show simple customer preferences
+    */
+   showSimpleCustomerPreferences(customer) {
+       try {
+           // Create modal
+           const modal = document.createElement('div');
+           modal.className = 'modal customer-preferences-modal';
+           modal.style.position = 'fixed';
+           modal.style.top = '0';
+           modal.style.left = '0';
+           modal.style.width = '100%';
+           modal.style.height = '100%';
+           modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+           modal.style.display = 'flex';
+           modal.style.justifyContent = 'center';
+           modal.style.alignItems = 'center';
+           modal.style.zIndex = '1000';
+           
+           // Get displayed products
+           const displayedProducts = window.gameState.data.shopDisplays
+               .filter(display => display.filled)
+               .map(display => {
+                   const product = window.gameState.data.inventory.find(p => p.id === display.productId);
+                   return {
+                       display,
+                       product
+                   };
+               })
+               .filter(item => item.product);
+           
+           // Create product list
+           let productsHTML = '';
+           if (displayedProducts.length > 0) {
+               displayedProducts.forEach(item => {
+                   productsHTML += `
+                       <div class="product-item" data-product-id="${item.product.id}" data-display-id="${item.display.id}" style="display: flex; align-items: center; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; cursor: pointer;">
+                           <img src="${item.product.imageUrl}" alt="${item.product.name}" style="width: 50px; height: 50px; margin-right: 10px;">
+                           <div>
+                               <div>${item.product.name}</div>
+                               <div>${item.product.price} coins</div>
+                           </div>
+                       </div>
+                   `;
+               });
+           } else {
+               productsHTML = '<p>No products on display yet.</p>';
+           }
+           
+           modal.innerHTML = `
+               <div class="modal-content" style="background-color: #ffeef2; border-radius: 15px; padding: 20px; max-width: 90%; width: 400px;">
+                   <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                       <h3 style="margin: 0;">Customer Preferences</h3>
+                       <button class="close-button" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+                   </div>
+                   <div class="modal-body">
+                       <div class="customer-info" style="display: flex; margin-bottom: 20px;">
+                           <img src="${customer.avatar}" alt="${customer.type}" style="width: 80px; height: 80px; margin-right: 15px;">
+                           <div>
+                               <p>Type: ${customer.type.charAt(0).toUpperCase() + customer.type.slice(1)}</p>
+                               <p>Budget: ${customer.budget} coins</p>
+                           </div>
+                       </div>
+                       <h4>Available Products:</h4>
+                       <div class="product-list">
+                           ${productsHTML}
+                       </div>
+                   </div>
+               </div>
+           `;
+           
+           // Add to document
+           document.body.appendChild(modal);
+           
+           // Add close button handler
+           modal.querySelector('.close-button').addEventListener('click', () => {
+               document.body.removeChild(modal);
+           });
+           
+           // Add product selection handlers
+           modal.querySelectorAll('.product-item').forEach(item => {
+               item.addEventListener('click', () => {
+                   const productId = item.getAttribute('data-product-id');
+                   const displayId = item.getAttribute('data-display-id');
+                   const product = window.gameState.data.inventory.find(p => p.id === productId);
+                   
+                   if (product) {
+                       // Check if customer can afford it
+                       if (product.price <= customer.budget) {
+                           // Try to sell product
+                           if (typeof window.gameState.sellProduct === 'function') {
+                               window.gameState.sellProduct(productId, product.price);
+                               
+                               // Update UI
+                               this.updateCoinDisplay();
+                               this.renderShopDisplays();
+                               this.renderInventory();
+                               
+                               // Remove customer from active customers
+                               window.gameState.data.activeCustomers = window.gameState.data.activeCustomers.filter(c => c.id !== customer.id);
+                               this.renderCustomers();
+                               
+                               this.showNotification(`${customer.type} customer bought ${product.name} for ${product.price} coins!`);
+                           }
+                       } else {
+                           this.showNotification(`${customer.type} customer can't afford this item!`);
+                       }
+                   }
+                   
+                   document.body.removeChild(modal);
+               });
+               
+               // Add hover effect
+               item.addEventListener('mouseenter', () => {
+                   item.style.backgroundColor = '#ffe6ec';
+               });
+               
+               item.addEventListener('mouseleave', () => {
+                   item.style.backgroundColor = 'transparent';
+               });
+           });
+       } catch (error) {
+           console.error('Error showing customer preferences:', error);
+           this.showNotification('Error showing customer preferences');
+       }
+   },
+   
+   /**
+    * Update theme
+    */
+   updateTheme() {
+       try {
+           const theme = window.gameState?.data?.settings?.theme || 'pastel';
+           document.body.setAttribute('data-theme', theme);
+           
+           console.log('Theme updated:', theme);
+       } catch (error) {
+           console.error('Error updating theme:', error);
+       }
+   },
+   
+   /**
+    * Update settings UI
+    */
+   updateSettingsUI() {
+       try {
+           // Find settings elements
+           const musicVolume = document.getElementById('musicVolume');
+           const sfxVolume = document.getElementById('sfxVolume');
+           const themeButtons = document.querySelectorAll('.theme-button');
+           
+           // Update them if they exist
+           if (musicVolume && window.gameState?.data?.settings) {
+               musicVolume.value = window.gameState.data.settings.musicVolume || 50;
+           }
+           
+           if (sfxVolume && window.gameState?.data?.settings) {
+               sfxVolume.value = window.gameState.data.settings.sfxVolume || 70;
+           }
+           
+           if (themeButtons.length && window.gameState?.data?.settings) {
+               themeButtons.forEach(button => {
+                   const buttonTheme = button.getAttribute('data-theme');
+                   button.classList.toggle('active', buttonTheme === window.gameState.data.settings.theme);
+               });
+           }
+           
+           console.log('Settings UI updated');
+       } catch (error) {
+           console.error('Error updating settings UI:', error);
+       }
+   },
+   
+   /**
+    * Start a new day
+    */
+   startNewDay() {
+       try {
+           if (!window.gameState || typeof window.gameState.startNewDay !== 'function') {
+               this.showNotification('Cannot start new day');
+               return;
+           }
+           
+           const newDay = window.gameState.startNewDay();
+           
+           // Update UI
+           this.updateDayDisplay();
+           this.renderCustomers();
+           
+           this.showNotification(`Day ${newDay} has begun!`);
+       } catch (error) {
+           console.error('Error starting new day:', error);
+           this.showNotification('Error starting new day');
+       }
+   },
+   
+   /**
+    * Update coin display
+    */
+   updateCoinDisplay() {
+       try {
+           if (this.elements.coinDisplay && window.gameState?.data) {
+               this.elements.coinDisplay.textContent = window.gameState.data.coins || 0;
+           }
+       } catch (error) {
+           console.error('Error updating coin display:', error);
+       }
+   },
+   
+   /**
+    * Update day display
+    */
+   updateDayDisplay() {
+       try {
+           if (this.elements.dayDisplay && window.gameState?.data) {
+               this.elements.dayDisplay.textContent = window.gameState.data.day || 1;
+           }
+       } catch (error) {
+           console.error('Error updating day display:', error);
+       }
+   },
+   
+   /**
+    * Show notification
+    */
+   showNotification(message, duration = 3000) {
+       try {
+           // Check if we already have a notification element
+           let notification = document.getElementById('notification');
+           
+           // Create one if it doesn't exist
+           if (!notification) {
+               notification = document.createElement('div');
+               notification.id = 'notification';
+               notification.style.position = 'fixed';
+               notification.style.top = '80px';
+               notification.style.left = '50%';
+               notification.style.transform = 'translateX(-50%)';
+               notification.style.backgroundColor = '#ffffff';
+               notification.style.color = '#333333';
+               notification.style.padding = '10px 20px';
+               notification.style.borderRadius = '20px';
+               notification.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
+               notification.style.zIndex = '1000';
+               notification.style.transition = 'opacity 0.3s, transform 0.3s';
+               notification.style.opacity = '0';
+               
+               document.body.appendChild(notification);
+           }
+           
+           // Update message
+           notification.textContent = message;
+           
+           // Show notification
+           notification.style.opacity = '1';
+           notification.style.transform = 'translateX(-50%) translateY(0)';
+           
+           // Hide after duration
+           clearTimeout(this.state.lastNotification);
+           this.state.lastNotification = setTimeout(() => {
+               notification.style.opacity = '0';
+               notification.style.transform = 'translateX(-50%) translateY(-10px)';
+           }, duration);
+           
+           console.log('Notification shown:', message);
+       } catch (error) {
+           console.error('Error showing notification:', error);
+       }
+   },
+   
+   /**
+    * Update all UI elements
+    */
+   updateAllUI() {
+       this.updateCoinDisplay();
+       this.updateDayDisplay();
+       this.updateTheme();
+       this.renderShopDisplays();
+       this.renderInventory();
+       this.renderCustomers();
+       this.updateSettingsUI();
+   },
+   
+   /**
+    * Show error
+    */
+   showError(message) {
+       console.error('Game Error:', message);
+       
+       // Find error elements
+       const errorScreen = this.elements.errorScreen;
+       const errorMessage = document.getElementById('errorMessage');
+       
+       // Show error screen if available
+       if (errorScreen && errorMessage) {
+           errorMessage.textContent = message;
+           errorScreen.classList.remove('hidden');
+           
+           // Hide loading and game
+           if (this.elements.loadingScreen) {
+               this.elements.loadingScreen.classList.add('hidden');
+           }
+           
+           if (this.elements.gameContainer) {
+               this.elements.gameContainer.classList.add('hidden');
+           }
+       } else {
+           // Fallback to alert
+           alert('Game Error: ' + message);
+       }
+   },
+   
+   /**
+    * Debug product templates
+    */
+   debugProductTemplates() {
+       console.group('Product Templates Debug');
+       console.log('ProductData exists:', typeof window.ProductData !== 'undefined');
+       
+       if (window.ProductData && Array.isArray(window.ProductData.templates)) {
+           console.log('ProductData templates:', window.ProductData.templates.length);
+           console.log('Templates:', window.ProductData.templates);
+       } else {
+           console.warn('ProductData templates not available');
+       }
+       
+       // Check gameState
+       console.log('gameState exists:', typeof window.gameState !== 'undefined');
+       if (window.gameState && typeof window.gameState.getProductTemplate === 'function') {
+           console.log('Test template (mug):', window.gameState.getProductTemplate('mug'));
+       }
+       
+       console.groupEnd();
+   },
+   
+   /**
+    * Helper: Get view key from name
+    */
+   getViewKey(viewName) {
+       const keyMap = {
+           'shopView': 'shop',
+           'studioView': 'studio',
+           'inventoryView': 'inventory',
+           'settingsView': 'settings'
+       };
+       
+       return keyMap[viewName] || viewName;
+   },
+   
+   /**
+    * Helper: Safely get element by selector
+    */
+   getElement(selector) {
+       try {
+           // Try query selector first (more flexible)
+           const element = document.querySelector(selector);
+           
+           // If not found, try getElementById if selector looks like an ID
+           if (!element && selector.startsWith('#')) {
+               return document.getElementById(selector.substring(1));
+           }
+           
+           return element;
+       } catch (error) {
+           console.warn(`Error getting element ${selector}:`, error);
+           return null;
+       }
+   },
+   
+   /**
+    * Helper: Find button by text content
+    */
+   findButtonByText(text) {
+       try {
+           return Array.from(document.querySelectorAll('button'))
+               .find(btn => btn.textContent.trim() === text);
+       } catch (error) {
+           console.warn(`Error finding button with text "${text}":`, error);
+           return null;
+       }
+   },
+   
+   /**
+    * Helper: Add safe event listener
+    */
+   addSafeEventListener(element, event, callback) {
+       if (!element) return;
+       
+       try {
+           element.addEventListener(event, callback);
+       } catch (error) {
+           console.warn(`Error adding ${event} listener:`, error);
+       }
+   },
+   
+   /**
+    * Helper: Get product template
+    */
+   getProductTemplate(templateId) {
+       if (window.gameState && typeof window.gameState.getProductTemplate === 'function') {
+           return window.gameState.getProductTemplate(templateId);
+       }
+       
+       // Fallback templates
+       const templates = {
+           'mug': { 
+               id: 'mug',
+               name: 'Mug', 
+               basePrice: 8,
+               image: 'assets/images/products/mug.png',
+               artPosition: { x: 70, y: 70, width: 120, height: 120, rotation: 0 }
+           },
+           'tote': { 
+               id: 'tote',
+               name: 'Tote Bag', 
+               basePrice: 12,
+               image: 'assets/images/products/tote.png',
+               artPosition: { x: 60, y: 50, width: 140, height: 140, rotation: 0 }
+           },
+           'shirt': { 
+               id: 'shirt',
+               name: 'T-Shirt', 
+               basePrice: 15,
+               image: 'assets/images/products/tshirt.png',
+               artPosition: { x: 75, y: 60, width: 110, height: 110, rotation: 0 }
+           },
+           'poster': { 
+               id: 'poster',
+               name: 'Poster', 
+               basePrice: 10,
+               image: 'assets/images/products/poster.png',
+               artPosition: { x: 40, y: 40, width: 180, height: 180, rotation: 0 }
+           }
+       };
+       
+       return templates[templateId] || templates['mug'];
+   },
+   
+   /**
+    * Helper: Get product base price
+    */
+   getProductBasePrice(productType) {
+       const prices = {
+           'mug': 8,
+           'tote': 12,
+           'shirt': 15,
+           'poster': 10
+       };
+       
+       return prices[productType] || 10;
+   },
+   
+   /**
+    * Helper: Get product display name
+    */
+   getProductDisplayName(productType) {
+       const names = {
+           'mug': 'Mug with Custom Art',
+           'tote': 'Tote Bag with Custom Art',
+           'shirt': 'T-Shirt with Custom Art',
+           'poster': 'Poster with Custom Art'
+       };
+       
+       return names[productType] || 'Custom Product';
+   }
 };
 
 // For backward compatibility
@@ -1408,19 +1555,19 @@ const ui = UI;
 
 // Initialize UI on page load
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM content loaded, initializing UI...');
-    UI.init();
+   console.log('DOM content loaded, initializing UI...');
+   UI.init();
 });
 
 // Backup initialization in case DOMContentLoaded already fired
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    console.log('Document already loaded, initializing UI now');
-    setTimeout(function() {
-        UI.init();
-    }, 200);
+   console.log('Document already loaded, initializing UI now');
+   setTimeout(function() {
+       UI.init();
+   }, 200);
 }
 
 // Catch errors for diagnostic purposes
 window.addEventListener('error', function(event) {
-    console.error('Global error caught:', event.error);
-});
+   console.error('Global error caught:', event.error);
+});                                
